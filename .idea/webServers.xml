@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="ffa73e25-a75b-46c0-b6ea-9b77171d067f" name="biji_adbpx_com" url="http://biji.adbpx.com">
+        <fileTransfer host="biji.adbpx.com" port="21" username="biji_adbpx_com">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

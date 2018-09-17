@@ -68,7 +68,7 @@ class Address
     }
 
     public function getLocation($location,$radius=1000,$extensions='all',$output='json',$batch="false"){
-        $url = 'https://restapi.amap.com/v3/geocode/geo';//API服务地址
+        $url = 'https://restapi.amap.com/v3/geocode/regeo';//API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
