@@ -1,6 +1,7 @@
 <?php
 
 namespace Zhjun\Address;
+
 use GuzzleHttp\Client;
 use Zhjun\Address\Exceptions\HttpException;
 use Zhjun\Address\Exceptions\InvalidArgumentException;
@@ -21,19 +22,17 @@ class Address
         return new Client($this->guzzleOptions);
     }
 
-    public function setGuzzleOptions(array $options){
-
+    public function setGuzzleOptions(array $options)
+    {
         $this->guzzleOptions = $options;
     }
 
     /**
      * @param $
-     *
      */
-
-    public function getAddress($address,$city,$batch='false',$output='json'){
-
-        $url = 'https://restapi.amap.com/v3/geocode/geo';//API服务地址
+    public function getAddress($address, $city, $batch = 'false', $output = 'json')
+    {
+        $url = 'https://restapi.amap.com/v3/geocode/geo'; //API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
@@ -41,10 +40,10 @@ class Address
 
         // 2. 封装 query 参数，并对空值进行过滤。
         $query = array_filter([
-            'key' => $this->key,
-            'address'=>$address,
-            'city' => $city,
-            'batch'=>$batch,
+            'key'    => $this->key,
+            'address'=> $address,
+            'city'   => $city,
+            'batch'  => $batch,
             'output' => $output,
         ]);
 
@@ -62,29 +61,29 @@ class Address
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
-
     }
 
-    public function getLocation($location,$radius=1000,$extensions='all',$output='json',$batch="false"){
-        $url = 'https://restapi.amap.com/v3/geocode/geo';//API服务地址
+    public function getLocation($location, $radius = 1000, $extensions = 'all', $output = 'json', $batch = 'false')
+    {
+        $url = 'https://restapi.amap.com/v3/geocode/geo'; //API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
         }
 
-
         // 2. 封装 query 参数，并对空值进行过滤。
         $query = array_filter([
-            'key' => $this->key,
-            'location'=>$location,
-            'radius' => $radius,
-            'batch'=>$batch,
-            'output' => $output,
+            'key'        => $this->key,
+            'location'   => $location,
+            'radius'     => $radius,
+            'batch'      => $batch,
+            'output'     => $output,
             'extensions' => $extensions,
             //'roadlevel' => $roadlevel,
         ]);
+
         try {
             // 3. 调用 getHttpClient 获取实例，并调用该实例的 `get` 方法，
             // 传递参数为两个：$url、['query' => $query]，
@@ -99,8 +98,7 @@ class Address
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
-
 }
