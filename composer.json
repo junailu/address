@@ -1,0 +1,21 @@
+{
+    "name": "zhjun/address",
+    "description": "A address SDK.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zhjun",
+            "email": "1550969027@qq.com"
+        }
+    ],
+    "require": {
+        "phpunit/phpunit": "^7.3",
+        "guzzlehttp/guzzle": "^6.3",
+        "mockery/mockery": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zhjun\\Address\\": "./src"
+        }
+    }
+}
