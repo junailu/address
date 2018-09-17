@@ -3,7 +3,9 @@
 <p align="center"> .</p>
 
 
-## Installing
+[![Build Status](https://travis-ci.org/overtrue/weather.svg?branch=master)](https://travis-ci.org/overtrue/weather)
+
+## 安装
 
 ```shell
 $ composer require zhjun/address -vvv
@@ -13,7 +15,7 @@ $ composer require zhjun/address -vvv
 
 TODO
 
-## Contributing
+## 配置
 
 You can contribute in one of three ways:
 
