@@ -17,12 +17,12 @@
         "psr-4": {
             "Zhjun\\Address\\": "./src"
         }
-    }
+    },
 
     "extra": {
         "laravel": {
             "providers": [
-                "Zhjun\\address\\ServiceProvider"
+                "Zhjun\\Address\\ServiceProvider"
             ]
         }
     }
