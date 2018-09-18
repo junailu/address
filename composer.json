@@ -18,4 +18,12 @@
             "Zhjun\\Address\\": "./src"
         }
     }
+
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Zhjun\\address\\ServiceProvider"
+            ]
+        }
+    }
 }

@@ -113,7 +113,7 @@ class AdressTest extends TestCase
         $client = \Mockery::mock(Client::class);
 
         // 指定将会产生的形为（在后续的测试中将会按下面的参数来调用）。
-        $client->allows()->get('https://restapi.amap.com/v3/geocode/geo', [
+        $client->allows()->get('https://restapi.amap.com/v3/geocode/regeo', [
             'query' => [
                 'key' => 'mock-key',
                 'location'=>'116.481488,39.990464',
