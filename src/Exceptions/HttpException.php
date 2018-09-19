@@ -9,7 +9,7 @@
 namespace Zhjun\Address\Exceptions;
 
 
-class HttpException extends \Exception
+class HttpException extends Exception
 {
 
 }

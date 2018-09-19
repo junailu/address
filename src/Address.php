@@ -2,8 +2,11 @@
 
 namespace Zhjun\Address;
 use GuzzleHttp\Client;
+use Zhjun\Address\Exceptions\AddressException;
+use Zhjun\Address\Exceptions\DistanceException;
 use Zhjun\Address\Exceptions\HttpException;
 use Zhjun\Address\Exceptions\InvalidArgumentException;
+use Zhjun\Address\Exceptions\KeyException;
 
 class Address
 {
@@ -16,15 +19,39 @@ class Address
     public function __construct($gKey='',$bKey='')
     {
         if(!$gKey){//如果$gKey不存在就读取配置中的$gKey
-            $this->gKey = $_ENV['GAO_API_KEY'];
+            if(!function_exists('config')){
+                function config(){
+                    return dirname(__FILE__).'/Copy/config';
+                }
+            }
+            $key1 = config('services.map.gkey');
         }else{
-            $this->gKey = $gKey;
+            $key1 = $gKey;
         }
+
+        $this->gKey = $this->rand($key1);
+
         if(!$bKey){//如果bKey不存在就读取配置中的bKey
-            $this->bKey = $_ENV['BAI_API_KEY'];
+            if(!function_exists('config')){
+                function config(){
+                    return dirname(__FILE__).'/Copy/config';
+                }
+            }
+            $key2 = config('services.map.bkey');
         }else{
-            $this->bKey = $bKey;
+            $key2 = $bKey;
         }
+        $this->bKey = $this->rand($key2);
+
+    }
+    public function config(){
+
+    }
+    //对多个key值进行处理
+    public function rand($key){
+        $key = explode(',',$key);
+        $rand= array_rand($key,1);
+        return $key[$rand];
     }
 
     public function getHttpClient()
@@ -42,27 +69,36 @@ class Address
      *
      */
 
-    public function getAddress($address,$city='',$tag='',$batch='false',$output='json'){
+    public function getAddress($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
 
-        $gaode_url = 'https://restapi.amap.com/v3/geocode/geo';//高德API服务地址
+        $gaode_url = 'https://restapi.amap.com/v3/place/text';//高德API服务地址
         $baidu_url = 'http://api.map.baidu.com/place/v2/search';//百度API服务地址
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
         }
 
+        if (!\in_array(\strtolower($extensions), ['base', 'all'])) {
+            throw new InvalidArgumentException('Invalid type value(base/all): '.$extensions);
+        }
+
         // 2. 封装 query 参数，并对空值进行过滤。
         $gaode_query = array_filter([ //高德地图参数
             'key' => $this->gKey,
-            'address'=>$address,
+            'keywords'=>$keywords,
             'city' => $city,
-            'batch'=>$batch,
+            'types' => $types,
+            'children' => $children,
+            'offset' => $offset,
+            'page'=>$page,
             'output' => $output,
+            'extensions' => $extensions,
         ]);
+
         $baidu_query = array_filter([ //百度地图参数
             'ak' => $this->bKey,
-            'query'=>$address,
+            'query'=>$keywords,
             'region' => $city,
-            'tag' =>$tag,
+            'tag' =>$types,
             'output' => $output,
         ]);
         try {
@@ -75,18 +111,21 @@ class Address
             // 4. 返回值根据 $output 返回不同的格式，
             // 当 $output 为 json 时，返回数组格式，否则为 xml。
             $gaode_rpe = $output === 'json' ? \json_decode($response, true) : $response;
-            $gaode_loca = $gaode_rpe['geocodes'][0]['location'];
-            $gaode_loca = explode(',',$gaode_loca);
-
+            if(count($gaode_rpe['pois'])>0){
+                $gaode_loca = $gaode_rpe['pois'][0]['location'];
+                $gaode_loca = explode(',',$gaode_loca);
+            }
             $response = $this->getHttpClient()->get($baidu_url, [
                 'query' => $baidu_query,
             ])->getBody()->getContents();
 
             $baidu_rpe = $output === 'json' ? \json_decode($response, true) : $response;
-            $bai_loca = $baidu_rpe['results'][0]['location'];
-            $distance = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
-            return $distance;
-
+            dump($baidu_rpe);
+            if(count($baidu_rpe['results'])>0 && count($gaode_rpe['pois'])>0){
+                $bai_loca = $baidu_rpe['results'][0]['location'];
+                $distance = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
+                return $distance;
+            }
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
@@ -96,11 +135,11 @@ class Address
     }
 
     /**
-     * 根据搜索地址获取
+     * 根据搜索地址获取（高德地图）
      */
-    public function search($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
+    public function gaodeSearch($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
 
-        $gaode_url = 'https://restapi.amap.com/v3/place/text';//高德API服务地址搜索
+        $url = 'https://restapi.amap.com/v3/place/text';//高德API服务地址搜索
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
@@ -108,35 +147,108 @@ class Address
         if (!\in_array(\strtolower($extensions), ['base', 'all'])) {
             throw new InvalidArgumentException('Invalid type value(base/all): '.$extensions);
         }
+        try{
+            $query = array_filter([ //高德地图参数
+                'key' => $this->gKey,
+                'keywords'=>$keywords,//地址
+                'types'=>$types,//类型
+                'city' => $city,//市
+                'children'=>$children,
+                'offset'=>$offset,//每页记录数据
+                'page'=>$page,//页数
+                'output' => $output,
+                'extensions' => $extensions,
+            ]);
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+            // 4. 返回值根据 $output 返回不同的格式，
+            // 当 $output 为 json 时，返回数组格式，否则为 xml。
+            $data = $output === 'json' ? \json_decode($response, true) : $response;
+            if($data['info'] != "OK"){
+                throw new KeyException('gaode Key exception');
+            }
+            if(count($data['pois'])<1){
+                throw new AddressException('gaode address resolution exception:'.$city.$keywords);
+            }
+            return $data;
+        }catch(\Exception $e){
 
-        $gaode_query = array_filter([ //高德地图参数
-            'key' => $this->gKey,
-            'keywords'=>$keywords,//地址
-            'types'=>$types,//类型
-            'city' => $city,//市
-            'children'=>$children,
-            'offset'=>$offset,//每页记录数据
-            'page'=>$page,//页数
-            'output' => $output,
-            'extensions' => $extensions,
-        ]);
-        $response = $this->getHttpClient()->get($gaode_url, [
-            'query' => $gaode_query,
-        ])->getBody()->getContents();
-        // 4. 返回值根据 $output 返回不同的格式，
-        // 当 $output 为 json 时，返回数组格式，否则为 xml。
-        $gaode_rpe = $output === 'json' ? \json_decode($response, true) : $response;
-        return $gaode_rpe;
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+
+        }
+
 
     }
 
+    /**
+     * @param $keywords
+     * @param $city
+     * @param string $types
+     * @param int $children
+     * @param int $offset
+     * @param int $page
+     * @param string $output
+     * @param string $extensions
+     * @throws InvalidArgumentException
+     * 根据地址搜索(百度地图)
+     */
+    public function baiduSearch($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
+
+        $url = 'http://api.map.baidu.com/place/v2/search';//百度API服务地址
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+
+        if (!\in_array(\strtolower($extensions), ['base', 'all'])) {
+            throw new InvalidArgumentException('Invalid type value(base/all): '.$extensions);
+        }
+        try {
+            $query = array_filter([ //百度地图参数
+                'ak' => $this->bKey,
+                'query'=>$keywords,
+                'region' => $city,
+                'tag' =>$types,
+                'output' => $output,
+            ]);
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+
+            $data = $output === 'json' ? \json_decode($response, true) : $response;
+            if($data['message'] != "ok"){
+                throw new KeyException('gaode Key exception');
+            }
+            if(count($data['results'])<1){
+                throw new AddressException('baidu address resolution exception:'.$city.$keywords);
+            }
+            return $data;
+        }catch(\Exception $e){
+
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+
+
+    }
+
+    /**
+     * @param $location
+     * @param int $radius
+     * @param string $extensions
+     * @param string $output
+     * @param string $batch
+     * @return mixed|string
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 根据坐标搜索地址
+     */
     public function getLocation($location,$radius=1000,$extensions='all',$output='json',$batch="false"){
+
         $url = 'https://restapi.amap.com/v3/geocode/regeo';//API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
         }
-
 
         // 2. 封装 query 参数，并对空值进行过滤。
         $query = array_filter([
@@ -146,7 +258,6 @@ class Address
             'batch'=>$batch,
             'output' => $output,
             'extensions' => $extensions,
-            //'roadlevel' => $roadlevel,
         ]);
         try {
             // 3. 调用 getHttpClient 获取实例，并调用该实例的 `get` 方法，
@@ -158,7 +269,7 @@ class Address
             // 4. 返回值根据 $output 返回不同的格式，
             // 当 $output 为 json 时，返回数组格式，否则为 xml。
 
-            return $output === 'json' ? \json_decode($response, true) : $response;
+            return $data = $output === 'json' ? \json_decode($response, true) : $response;
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
@@ -166,6 +277,26 @@ class Address
         }
     }
 
+    /**
+     * 计算百度地图和高德地图同一地址的经纬距离
+     */
+    public function distance($keywords,$city,$distance=500,$types=''){
+
+        $gaodeSearch = $this->gaodeSearch($keywords,$city);
+
+        $baiduSearch = $this->baiduSearch($keywords,$city);
+        if($gaodeSearch['info'] == "OK" && $baiduSearch['message'] == 'ok' && count($gaodeSearch['pois'])>0 && count($baiduSearch['results'])){
+            $gaode_loca = $gaodeSearch['pois'][0]['location'];
+            $gaode_loca = explode(',',$gaode_loca);//高德地图经纬度
+            $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
+            $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
+            if($distances>$distance){//如果距离超出规定的距离就抛出异常
+                throw new DistanceException('address resolution exception:'.$distances);
+
+            }
+            return '百度地图和高德地图相差距离:'.$distances;
+        }
+    }
     /**
      * @param $from
      * @param $to

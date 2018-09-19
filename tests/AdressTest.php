@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Zhjun\Address\Address;
 use Zhjun\Address\Exceptions\HttpException;
 use Zhjun\Address\Exceptions\InvalidArgumentException;
+use Zhjun\Address\Exceptions\DistanceException;
 use GuzzleHttp\Client;
 use Mockery\Matcher\AnyArgs;
 
@@ -44,48 +45,26 @@ class AdressTest extends TestCase
     }
 
 
-    public function testGetAddress()
+    public function testKey()
     {
         // 创建模拟接口响应值。
-        $gKey = '9422276473854ff6d8e340df63d675f4';
-        $bKey = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G';
+        $gKey = '9422276473854ff6d8e340df63d675f4,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
+        $bKey = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
         $w = new Address($gKey,$bKey);
-        $s = $w->getAddress('北京大学','高德院校','北京');
-        $this->assertLessThanOrEqual(500,$s);
+        print_r($w);
+        exit();
+//        $s = $w->getAddress('北京大学','北京');
+//        // 断言会抛出此异常类
+//        $this->expectException(DistanceException::class);
+//
+//        // 断言异常消息为 'Invalid response format: array'
+//        $this->expectExceptionMessage('No address found');
+//        $this->assertLessThanOrEqual(500,$s);
     }
 
 
-    // 检查 $output 参数
-    public function testGetAddressWithInvalidOutput()
-    {
-        $w = new Address('mock-key');
 
-        // 断言会抛出此异常类
-        $this->expectException(InvalidArgumentException::class);
 
-        // 断言异常消息为 'Invalid response format: array'
-        $this->expectExceptionMessage('Invalid response format: array');
-
-        // 因为支持的格式为 xml/json，所以传入 array 会抛出异常
-        $w->getAddress('方恒国际中心A座','北京','false','array');
-        // 如果没有抛出异常，就会运行到这行，标记当前测试没成功
-        $this->fail('Faild to assert getAddress throw exception with invalid argument.');
-    }
-
-    public function testGetAddressWithGuzzleRuntimeException()
-    {
-        $client = \Mockery::mock(Client::class);
-        $client->allows()
-            ->get(new AnyArgs()) // 由于上面的用例已经验证过参数传递，所以这里就不关心参数了。
-            ->andThrow(new \Exception('request timeout')); // 当调用 get 方法时会抛出异常。
-        $w = \Mockery::mock(Address::class, ['mock-key'])->makePartial();
-        $w->allows()->getHttpClient()->andReturn($client);
-
-        // 接着需要断言调用时会产生异常。
-        $this->expectException(HttpException::class);
-        $this->expectExceptionMessage('request timeout');
-        $w->getAddress('方恒国际中心A座','北京');
-    }
 
 
     public function testGetLocation()
@@ -160,5 +139,42 @@ class AdressTest extends TestCase
         $w->allows()->getHttpClient()->andReturn($client); // $client 为上面创建的模拟实例。
         // 然后调用 `getWeather` 方法，ååå。
         $this->assertLessThanOrEqual(['success' => true], $w->search('北京大学','高校院校','北京'));
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * 测试高德地址解析
+     */
+    public function testGaodeSearch(){
+        $key = '9422276473854ff6d8e340df63d675f4,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
+        $Address = new Address($key);
+        $address = $Address->gaodeSearch('北京大学','北京');
+        $path = '/OK/';
+        $this->assertRegExp($path, $address['info']);
+
+    }
+    /**
+     * @throws InvalidArgumentException
+     * 测试百度地址解析
+     */
+    public function testBaiduSearch(){
+        $key = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
+        $Address = new Address('',$key);
+        $address = $Address->baiduSearch('北京大学','北京');
+        $path = '/ok/';
+        $this->assertRegExp($path, $address['message']);
+    }
+
+    /**
+     * @throws DistanceException
+     * 测试距离
+     */
+    public function testDistance(){
+        $key1 = '9422276473854ff6d8e340df63d675f4,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
+        $key2 = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
+        $Address = new Address($key1,$key2);
+        $address = $Address->distance('北京大学','北京');
+
+
     }
 }

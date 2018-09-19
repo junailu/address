@@ -2,14 +2,14 @@
 /**
  * Created by PhpStorm.
  * User: yons
- * Date: 2018/9/17
- * Time: AM9:35
+ * Date: 2018/9/19
+ * Time: PM5:46
  */
 
 namespace Zhjun\Address\Exceptions;
 
 
-class Exception extends \Exception
+class KeyException extends Exception
 {
 
 }
