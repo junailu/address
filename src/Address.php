@@ -63,77 +63,6 @@ class Address
 
         $this->guzzleOptions = $options;
     }
-
-    /**
-     * @param $
-     *
-     */
-
-    public function getAddress($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
-
-        $gaode_url = 'https://restapi.amap.com/v3/place/text';//高德API服务地址
-        $baidu_url = 'http://api.map.baidu.com/place/v2/search';//百度API服务地址
-        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
-            throw new InvalidArgumentException('Invalid response format: '.$output);
-        }
-
-        if (!\in_array(\strtolower($extensions), ['base', 'all'])) {
-            throw new InvalidArgumentException('Invalid type value(base/all): '.$extensions);
-        }
-
-        // 2. 封装 query 参数，并对空值进行过滤。
-        $gaode_query = array_filter([ //高德地图参数
-            'key' => $this->gKey,
-            'keywords'=>$keywords,
-            'city' => $city,
-            'types' => $types,
-            'children' => $children,
-            'offset' => $offset,
-            'page'=>$page,
-            'output' => $output,
-            'extensions' => $extensions,
-        ]);
-
-        $baidu_query = array_filter([ //百度地图参数
-            'ak' => $this->bKey,
-            'query'=>$keywords,
-            'region' => $city,
-            'tag' =>$types,
-            'output' => $output,
-        ]);
-        try {
-            // 3. 调用 getHttpClient 获取实例，并调用该实例的 `get` 方法，
-            // 传递参数为两个：$url、['query' => $query]，
-
-            $response = $this->getHttpClient()->get($gaode_url, [
-                'query' => $gaode_query,
-            ])->getBody()->getContents();
-            // 4. 返回值根据 $output 返回不同的格式，
-            // 当 $output 为 json 时，返回数组格式，否则为 xml。
-            $gaode_rpe = $output === 'json' ? \json_decode($response, true) : $response;
-            if(count($gaode_rpe['pois'])>0){
-                $gaode_loca = $gaode_rpe['pois'][0]['location'];
-                $gaode_loca = explode(',',$gaode_loca);
-            }
-            $response = $this->getHttpClient()->get($baidu_url, [
-                'query' => $baidu_query,
-            ])->getBody()->getContents();
-
-            $baidu_rpe = $output === 'json' ? \json_decode($response, true) : $response;
-            dump($baidu_rpe);
-            if(count($baidu_rpe['results'])>0 && count($gaode_rpe['pois'])>0){
-                $bai_loca = $baidu_rpe['results'][0]['location'];
-                $distance = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
-                return $distance;
-            }
-        } catch (\Exception $e) {
-            // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
-            // 并将调用异常作为 $previousException 传入。
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
-        }
-
-    }
-
     /**
      * 根据搜索地址获取（高德地图）
      */
@@ -169,7 +98,7 @@ class Address
                 throw new KeyException('gaode Key exception');
             }
             if(count($data['pois'])<1){
-                throw new AddressException('gaode address resolution exception:'.$city.$keywords);
+                return [];
             }
             return $data;
         }catch(\Exception $e){
@@ -219,8 +148,9 @@ class Address
             if($data['message'] != "ok"){
                 throw new KeyException('gaode Key exception');
             }
-            if(count($data['results'])<1){
-                throw new AddressException('baidu address resolution exception:'.$city.$keywords);
+
+            if(count($data['results'])<1) {
+                return [];
             }
             return $data;
         }catch(\Exception $e){
@@ -280,21 +210,73 @@ class Address
     /**
      * 计算百度地图和高德地图同一地址的经纬距离
      */
-    public function distance($keywords,$city,$distance=500,$types=''){
+    public function getAddress($keywords,$city,$mode=1,$distance=500,$types=''){
 
-        $gaodeSearch = $this->gaodeSearch($keywords,$city);
+        $data = [];
+        if($mode == 1){
 
-        $baiduSearch = $this->baiduSearch($keywords,$city);
-        if($gaodeSearch['info'] == "OK" && $baiduSearch['message'] == 'ok' && count($gaodeSearch['pois'])>0 && count($baiduSearch['results'])){
-            $gaode_loca = $gaodeSearch['pois'][0]['location'];
-            $gaode_loca = explode(',',$gaode_loca);//高德地图经纬度
-            $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
-            $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
-            if($distances>$distance){//如果距离超出规定的距离就抛出异常
-                throw new DistanceException('address resolution exception:'.$distances);
+            $gaodeSearch = $this->gaodeSearch($keywords,$city);
 
+            $baiduSearch = $this->baiduSearch($keywords,$city);
+
+            if(count($gaodeSearch)<1){
+
+                $baiduSearch = $baiduSearch['results'][0]['location'];
+
+                $data['gaode_location'] = [
+                    'lat'=>false,
+                    'lng'=>false,
+                ];
+                $data['baidu_location'] = [
+                    'lat'=>$baiduSearch['lat'],
+                    'lng'=>$baiduSearch['lng'],
+                ];
+                return $data;//高德地图经纬度;
             }
-            return '百度地图和高德地图相差距离:'.$distances;
+            if(count($baiduSearch)<1){
+                $location = $gaodeSearch['pois'][0]['location'];
+                $location = explode(',',$location);
+                $data['gaode_location'] = [
+                    'lat'=>$location[1],
+                    'lng'=>$location[0],
+                ];
+                $data['baidu_location'] = [
+                    'lat'=>false,
+                    'lng'=>false,
+                ];
+                return $data;//高德地图经纬度;
+            }
+            if($gaodeSearch['info'] == "OK" && $baiduSearch['message'] == 'ok' && count($gaodeSearch['pois'])>0 && count($baiduSearch['results'])){
+                $gaode_loca = $gaodeSearch['pois'][0]['location'];
+                $gaode_loca = explode(',',$gaode_loca);//高德地图经纬度
+                $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
+                $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
+                if($distances>$distance){//如果距离超出规定的距离就抛出异常
+                    throw new DistanceException('address resolution exception:'.$distances);
+                }
+                $data['gaode_location'] = [
+                    'lat'=>$gaode_loca[1],
+                    'lng'=>$gaode_loca[0],
+                ];
+                $data['baidu_location'] = [
+                    'lat'=>$bai_loca['lat'],
+                    'lng'=>$bai_loca['lng'],
+                ];
+                $data['distance'] = $distances;
+                return $data;
+            }
+        }else{
+            $gaodeSearch = $this->gaodeSearch($keywords,$city);
+            if($gaodeSearch['info'] == "OK" && count($gaodeSearch['pois'])>0){
+                $gaode_loca = $gaodeSearch['pois'][0]['location'];
+                $location = explode(',',$gaode_loca);
+                $data['gaode_location'] = [
+                    'lat'=>$location[1],
+                    'lng'=>$location[0],
+                ];
+                return $data;
+            }
+
         }
     }
     /**

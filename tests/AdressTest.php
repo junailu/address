@@ -44,29 +44,6 @@ class AdressTest extends TestCase
         $this->assertSame(5000, $w->getHttpClient()->getConfig('timeout'));
     }
 
-
-    public function testKey()
-    {
-        // 创建模拟接口响应值。
-        $gKey = '9422276473854ff6d8e340df63d675f4,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
-        $bKey = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
-        $w = new Address($gKey,$bKey);
-        print_r($w);
-        exit();
-//        $s = $w->getAddress('北京大学','北京');
-//        // 断言会抛出此异常类
-//        $this->expectException(DistanceException::class);
-//
-//        // 断言异常消息为 'Invalid response format: array'
-//        $this->expectExceptionMessage('No address found');
-//        $this->assertLessThanOrEqual(500,$s);
-    }
-
-
-
-
-
-
     public function testGetLocation()
     {
         // 创建模拟接口响应值。
@@ -173,7 +150,7 @@ class AdressTest extends TestCase
         $key1 = '9422276473854ff6d8e340df63d675f4,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
         $key2 = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
         $Address = new Address($key1,$key2);
-        $address = $Address->distance('北京大学','北京');
+        $address = $Address->getAddress('北京大学','北京');
 
 
     }
