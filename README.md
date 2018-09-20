@@ -8,7 +8,7 @@
 ## 安装
 
 ```shell
-$ composer require zhjun/address -vvv
+$ composer require zhjun/address
 ```
 
 ## Usage
@@ -17,13 +17,13 @@ TODO
 
 ## 配置
 
-You can contribute in one of three ways:
+引入扩展包后,调用Address控制器，调用$address->getAddress('具体地址','市','搜索类型(1)','范围');
 
-1. File bug reports using the [issue tracker](https://github.com/zhjun/address/issues).
-2. Answer questions or fix bugs on the [issue tracker](https://github.com/zhjun/address/issues).
-3. Contribute new features or update the wiki.
+搜索类型1:为百度和高德同时搜索,返回百度和高德的坐标和地图坐标的差距
 
-_The code contribution process is not very formal. You just need to make sure that you follow the PSR-0, PSR-1, and PSR-2 coding guidelines. Any new code contributions must be accompanied by unit tests where applicable._
+搜索类型2:为模糊搜索只搜索高德地图,并返回高德地图上的经纬度
+
+范围:如果搜索的时候高德和百度的经纬差距大于范围就返回异常,反之返回经纬度和差距
 
 ## License
 
