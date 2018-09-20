@@ -182,7 +182,7 @@ class Address
 
         // 2. 封装 query 参数，并对空值进行过滤。
         $query = array_filter([
-            'key' => $this->key,
+            'key' => $this->gKey,
             'location'=>$location,
             'radius' => $radius,
             'batch'=>$batch,
@@ -210,7 +210,7 @@ class Address
     /**
      * 计算百度地图和高德地图同一地址的经纬距离
      */
-    public function getAddress($keywords,$city,$mode=1,$distance=500,$types=''){
+    public function getAddress($keywords,$city,$mode=2,$distance=500,$types=''){
 
         $data = [];
         if($mode == 1){
@@ -300,5 +300,50 @@ class Address
             $distance = $distance;
         }
         return round($distance, $decimal);
+    }
+    //根据地址模糊搜索
+    public function search($keywords,$city,$type=1){
+        $data = [];
+        if($type == 1){
+            $gaodeSearch = $this->gaodeSearch($keywords,$city);
+            $data['status'] = $gaodeSearch['status'];
+            //$data['count'] = $gaodeSearch['count'];
+            $data['message'] = $gaodeSearch['info'];
+            //$data['infocode'] = $gaodeSearch['infocode'];
+            //$data['results'] = $gaodeSearch['infocode'];
+            $tmp = [];
+            foreach($gaodeSearch['pois'] as $key=>$value){
+                $tmp[$key]['id'] = $value['id'];
+                $tmp[$key]['name'] = $value['name'];
+                $tmp[$key]['type'] = $value['type'];
+                $tmp[$key]['address'] = $value['address'];
+                $tmp[$key]['location'] = $value['location'];
+                //$tmp[$key]['tel'] = $value['tel'];
+                $tmp[$key]['pcode'] = $value['pcode'];
+                $tmp[$key]['province'] = $value['pname'];
+                $tmp[$key]['citycode'] = $value['citycode'];
+                $tmp[$key]['city'] = $value['cityname'];
+                //$tmp[$key]['adcode'] = $value['adcode'];
+                $tmp[$key]['area'] = $value['adname'];
+            }
+            $data['results'] = $tmp;
+
+        }else{
+            $baiduSearch = $this->baiduSearch($keywords,$city);
+            $data['status'] = $baiduSearch['status'];
+            $data['message'] = $baiduSearch['message'];
+            $tmp = [];
+            foreach($baiduSearch['results'] as $key=>$value){
+                $tmp[$key]['name'] = $value['name'];
+                $tmp[$key]['location'] = $value['location']['lat'].','.$value['location']['lng'];
+                $tmp[$key]['address'] = $value['address'];
+                $tmp[$key]['province'] = $value['province'];
+                $tmp[$key]['city'] = $value['city'];
+                $tmp[$key]['area'] = $value['area'];
+                $tmp[$key]['uid'] = $value['uid'];
+            }
+            $data['results'] = $tmp;
+        }
+        return $data;
     }
 }

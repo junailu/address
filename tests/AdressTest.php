@@ -151,7 +151,13 @@ class AdressTest extends TestCase
         $key2 = 'KNb96c0YpWlwIKt5KFIewTPURL4Cnl6G,lKFbpq2yqhceWKen5ErigNFbpEuFGR3e';
         $Address = new Address($key1,$key2);
         $address = $Address->getAddress('北京大学','北京');
+    }
 
-
+    public function testSearch(){
+        $key1 = '9422276473854ff6d8e340df63d675f4';
+        $Address = new Address($key1);
+        $search = $Address->search('北京大学','北京');
+        $path = '/OK/';
+        $this->assertRegExp($path,$search['message']);
     }
 }
