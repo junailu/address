@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0ab3cdb4-3118-4b73-beb2-e6949a5a2fbf" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Address.php" afterPath="$PROJECT_DIR$/src/Address.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests/AdressTest.php" afterPath="$PROJECT_DIR$/tests/AdressTest.php" />
-    </list>
+    <list default="true" id="0ab3cdb4-3118-4b73-beb2-e6949a5a2fbf" name="Default" comment="" />
     <ignored path="address.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -36,8 +32,8 @@
       <file leaf-file-name="Address.php" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Address.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5688185">
-              <caret line="226" column="32" selection-start-line="226" selection-start-column="27" selection-end-line="226" selection-end-column="32" />
+            <state vertical-scroll-proportion="0.6857491">
+              <caret line="229" column="43" selection-start-line="229" selection-start-column="43" selection-end-line="229" selection-end-column="43" />
               <folding>
                 <element signature="e#32#54#0#PHP" expanded="true" />
                 <element signature="e#5151#6423#0#PHP" expanded="false" />
@@ -330,7 +326,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1920" height="974" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20340788" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1773163" sideWeight="0.49546486" order="0" side_tool="false" content_ui="combo" />
@@ -643,8 +639,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Address.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5688185">
-          <caret line="226" column="32" selection-start-line="226" selection-start-column="27" selection-end-line="226" selection-end-column="32" />
+        <state vertical-scroll-proportion="0.6857491">
+          <caret line="229" column="43" selection-start-line="229" selection-start-column="43" selection-end-line="229" selection-end-column="43" />
           <folding>
             <element signature="e#32#54#0#PHP" expanded="true" />
             <element signature="e#5151#6423#0#PHP" expanded="false" />
