@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="ffa73e25-a75b-46c0-b6ea-9b77171d067f" name="biji_adbpx_com" url="http://biji.adbpx.com">
-        <fileTransfer host="biji.adbpx.com" port="21" username="biji_adbpx_com">
+        <fileTransfer host="biji.adbpx.com" port="21" password="dfdedfe4dff8dfeddf9ddff2dfcfdfdedff0dff9dff3dfccdfecdfd9dfe8dfe8" username="">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />
           </advancedOptions>
