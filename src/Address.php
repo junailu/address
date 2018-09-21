@@ -213,7 +213,7 @@ class Address
     public function getAddress($keywords,$city,$mode=2,$distance=500,$types=''){
 
         $data = [];
-        if($mode == 1){
+        if($mode == 1){//严格模式
 
             $gaodeSearch = $this->gaodeSearch($keywords,$city);
 
@@ -265,7 +265,7 @@ class Address
                 $data['distance'] = $distances;
                 return $data;
             }
-        }else{
+        }else{//宽松模式
             $gaodeSearch = $this->gaodeSearch($keywords,$city);
             if($gaodeSearch['info'] == "OK" && count($gaodeSearch['pois'])>0){
                 $gaode_loca = $gaodeSearch['pois'][0]['location'];

@@ -34,7 +34,7 @@ $ composer require zhjun/address
 
 ## 获取经纬度
     
-    $Address->getAddress('string 具体地址','string 市','int 搜索类型=1','int 范围=500');
+    $Address->getAddress('string 具体地址','string 市','int 搜索类型=2','int 范围=500');
     
 ## 根据地址模糊搜索
 
@@ -75,7 +75,7 @@ $ composer require zhjun/address
         "distance":849.84000//百度地图和高德地图相差距离 单元:m
     }
     
-    3.$Address->getAddress('朝阳大悦城','北京',2);//宽松模式搜索(只搜索高德,默认严格模式)
+    3.$Address->getAddress('朝阳大悦城','北京',2);//宽松模式搜索(只搜索高德,默认宽松模式)
     
     Return
     {
@@ -86,7 +86,7 @@ $ composer require zhjun/address
     }
     
     
-    4.$Address->search('北京大学','北京);
+    4.$Address->search('北京大学','北京);//根据地址模糊搜索
      
      Ruturn
        array:3 [▼
