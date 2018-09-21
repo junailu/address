@@ -60,7 +60,7 @@ $ composer require zhjun/address
        }
     }
     
-    2.$Address->getAddress('朝阳大悦城','北京');
+    2.$Address->getAddress('朝阳大悦城','北京'，1);//严格模式
     
     Return:
     {
@@ -75,7 +75,7 @@ $ composer require zhjun/address
         "distance":849.84000//百度地图和高德地图相差距离 单元:m
     }
     
-    3.$Address->getAddress('朝阳大悦城','北京',2);//宽松模式搜索(只搜索高德,默认宽松模式)
+    3.$Address->getAddress('朝阳大悦城','北京');//宽松模式搜索(只搜索高德,默认宽松模式)
     
     Return
     {
