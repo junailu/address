@@ -8,7 +8,7 @@
 ## 安装
 
 ```shell
-$ composer require zhjun/address
+$ composer require zhjun/address_parse
 ```
 ## 配置
 在使用本扩展之前，你需要去 高德开放平台 注册账号，然后创建应用，获取应用的 API Key。
