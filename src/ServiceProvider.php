@@ -11,7 +11,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
             return new Address(config('services.address.gkey'),config('services.address.bkey'));
         });
 
-        $this->app->alias(Address::class, 'address_p');
+        $this->app->alias(Address::class, 'address_parse');
     }
 
     public function provides()

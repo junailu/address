@@ -24,7 +24,7 @@ class Address
                     return dirname(__FILE__).'/Copy/config';
                 }
             }
-            $key1 = config('services.map.gkey');
+            $key1 = config('services.map.GaoKey');
         }else{
             $key1 = $gKey;
         }
@@ -37,7 +37,7 @@ class Address
                     return dirname(__FILE__).'/Copy/config';
                 }
             }
-            $key2 = config('services.map.bkey');
+            $key2 = config('services.map.BaiKey');
         }else{
             $key2 = $bKey;
         }
