@@ -8,7 +8,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     public function register()
     {
         $this->app->singleton(Address::class, function(){
-            return new Address(config('services.address.gkey'),config('services.address.bkey'));
+            return new Address(config('services.map.GaoKey'),config('services.map.BaiKey'));
         });
 
         $this->app->alias(Address::class, 'address_parse');
@@ -16,6 +16,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
 
     public function provides()
     {
-        return [Address::class, 'address'];
+        return [Address::class, 'address_parse'];
     }
 }
