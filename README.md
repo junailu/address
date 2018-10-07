@@ -35,7 +35,7 @@ $ composer require zhjun/address
     
     Or
 
-    app('address')->getAddress($keywords,$city);
+    app('address_parse')->getAddress($keywords,$city);
  
 
 
