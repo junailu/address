@@ -15,16 +15,16 @@ $ composer require zhjun/address
 
     .env
   
-     GAODE_MAP_API_KEY= xxxxx,xxxx,xxxx   (可多组)
+     GAO_API_KEY= xxxxx,xxxx,xxxx   (可多组)
 
-     Badiu_API_KEY= xxxx,xxxx,xxxx       (可多组)
+     BAI_API_KEY= xxxx,xxxx,xxxx       (可多组)
      
      
     config/service的最后加入
      
      'map'=>[
              'GaoKey' => env('GAO_API_KEY'),
-             'BaiKey' => env('GAO_API_KEY'),
+             'BaiKey' => env('BAI_API_KEY'),
          ]
   
 

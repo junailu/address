@@ -228,8 +228,8 @@ class Address
                     'lng'=>false,
                 ];
                 $data['baidu_location'] = [
-                    'lat'=>$baiduSearch['lat'],
-                    'lng'=>$baiduSearch['lng'],
+                    'lat'=>number_format($baiduSearch['lat'],6),
+                    'lng'=>number_format($baiduSearch['lng'],6),
                 ];
                 return $data;//高德地图经纬度;
             }
@@ -259,8 +259,8 @@ class Address
                     'lng'=>$gaode_loca[0],
                 ];
                 $data['baidu_location'] = [
-                    'lat'=>$bai_loca['lat'],
-                    'lng'=>$bai_loca['lng'],
+                    'lat'=>number_format($baiduSearch['lat'],6),
+                    'lng'=>number_format($baiduSearch['lng'],6),
                 ];
                 $data['distance'] = $distances;
                 return $data;
