@@ -146,7 +146,7 @@ class Address
 
             $data = $output === 'json' ? \json_decode($response, true) : $response;
             if($data['message'] != "ok"){
-                throw new KeyException('gaode Key exception');
+                throw new KeyException('baidu Key exception');
             }
 
             if(count($data['results'])<1) {
