@@ -346,4 +346,49 @@ class Address
         }
         return $data;
     }
+
+    /**
+     * @param $keywords
+     * @param $city
+     * @param string $type
+     * @param string $citylimit
+     * @param string $datatype
+     * @param string $output
+     * @return mixed|string
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     */
+    public function addreeSearch($keywords,$city,$type='',$citylimit='all',$datatype='all',$output="json"){
+        $url = 'https://restapi.amap.com/v3/assistant/inputtips';//API服务地址
+
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+
+        // 2. 封装 query 参数，并对空值进行过滤。
+        $query = array_filter([
+            'key' => $this->gKey,
+            'keywords'=>$keywords,
+            'city' => $city,
+            'type'=>$type,
+            'citylimit'=>$citylimit,
+            'output' => $output,
+            'datatype' => $datatype,
+        ]);
+        try {
+            // 3. 调用 getHttpClient 获取实例，并调用该实例的 `get` 方法，
+            // 传递参数为两个：$url、['query' => $query]，
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+
+            // 4. 返回值根据 $output 返回不同的格式，
+            // 当 $output 为 json 时，返回数组格式，否则为 xml。
+            return $data = $output === 'json' ? \json_decode($response, true) : $response;
+        } catch (\Exception $e) {
+            // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
+            // 并将调用异常作为 $previousException 传入。
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+    }
 }
