@@ -46,7 +46,7 @@ $ composer require zhjun/address
     
 ## 根据地址模糊搜索
 
-    $Address->search('string 具体地址','string 市','int 搜索类型=1');//默认为高德
+    $Address->addressSearch('string 具体地址','string 市','int 搜索类型=1');//默认为高德
 
 ## 根据经纬度获取地址
 
