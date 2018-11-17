@@ -274,6 +274,8 @@ class Address
                     'lat'=>$location[1],
                     'lng'=>$location[0],
                 ];
+                $data['site']['name'] = $gaodeSearch['pois'][0]['cityname'];
+                $data['site']['code'] = $gaodeSearch['pois'][0]['citycode'];
                 return $data;
             }
 
