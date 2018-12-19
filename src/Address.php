@@ -393,4 +393,61 @@ class Address
             throw new HttpException($e->getMessage(),$e->getCode(),$e);
         }
     }
+    
+     /**
+     * @param $ip
+     * @param string $output
+     * @return mixed
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 高德根据ip获取城市
+     */
+    public function getGeoIpCity($ip,$output='json'){
+
+        $url = 'https://restapi.amap.com/v3/ip';
+
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+        // 2. 封装 query 参数，并对空值进行过滤。
+        $query = array_filter([
+            'key' => $this->gKey,
+            'ip'=>$ip,
+        ]);
+
+        try{
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+            return $data = $output === 'json' ? \json_decode($response, true) : $response;
+        }catch (\Exception $e){
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+
+    }
+
+    /**
+     * @param $ip
+     * @return mixed
+     * @throws HttpException
+     * 百度根据ip获取城市
+     */
+    public function getBaiIpCity($ip){
+        $url = 'https://api.map.baidu.com/location/ip';
+
+        // 2. 封装 query 参数，并对空值进行过滤。
+        $query = array_filter([ //百度地图参数
+            'ak' => $this->bKey,
+            'ip'=>$ip,
+        ]);
+
+        try{
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+           return json_decode($response,true);
+        }catch (\Exception $e){
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+    }
 }
