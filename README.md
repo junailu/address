@@ -38,7 +38,12 @@ $ composer require zhjun/address
     app('address_parse')->getAddress($keywords,$city);
  
 
-
+## 新增根据ip获取城市
+    app('address_parse')->getGeoIpCity($ip);
+    
+    Or
+    
+    app('address_parse')->getBaiIpCity($ip);
 
 ## 获取经纬度
     
