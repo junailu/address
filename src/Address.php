@@ -266,17 +266,35 @@ class Address
                 return $data;
             }
         }else{//宽松模式
-            $gaodeSearch = $this->gaodeSearch($keywords,$city);
-            if($gaodeSearch['info'] == "OK" && count($gaodeSearch['pois'])>0){
-                $gaode_loca = $gaodeSearch['pois'][0]['location'];
-                $location = explode(',',$gaode_loca);
-                $data['gaode_location'] = [
-                    'lat'=>$location[1],
-                    'lng'=>$location[0],
-                ];
-                $data['site']['name'] = $gaodeSearch['pois'][0]['cityname'];
-                $data['site']['code'] = $gaodeSearch['pois'][0]['citycode'];
-                return $data;
+            if($this->gaodeSearch($keywords,$city)){
+                $gaodeSearch = $this->gaodeSearch($keywords,$city);
+                if($gaodeSearch['info'] == "OK" && count($gaodeSearch['pois'])>0){
+                    $gaode_loca = $gaodeSearch['pois'][0]['location'];
+                    $location = explode(',',$gaode_loca);
+                    $data['gaode_location'] = [
+                        'lat'=>$location[1],
+                        'lng'=>$location[0],
+                    ];
+                    $data['site']['name'] = $gaodeSearch['pois'][0]['cityname'];
+                    $data['site']['code'] = $gaodeSearch['pois'][0]['citycode'];
+                    return $data;
+                }
+            }else{
+                $gaodeSearch = $this->geoAddress($keywords,$city);
+                if($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0){
+
+                    $gaode_loca = $gaodeSearch['geocodes'][0]['location'];
+                    
+                    $location = explode(',',$gaode_loca);
+
+                    $data['gaode_location'] = [
+                        'lat'=>$location[1],
+                        'lng'=>$location[0],
+                    ];
+                    $data['site']['name'] = $gaodeSearch['geocodes'][0]['city'];
+                    $data['site']['code'] = $gaodeSearch['geocodes'][0]['adcode'];
+                    return $data;
+                }
             }
 
         }
@@ -446,6 +464,39 @@ class Address
                 'query' => $query,
             ])->getBody()->getContents();
            return json_decode($response,true);
+        }catch (\Exception $e){
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+    }
+    
+     /**
+     * @param $address
+     * @param $city
+     * @param bool $batch
+     * @param string $output
+     * @return mixed|string
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 新根据地址获取位置
+     */
+    public function geoAddress($address,$city,$batch=true,$output='json'){
+        $url = 'https://restapi.amap.com/v3/geocode/geo';
+
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+        // 2. 封装 query 参数，并对空值进行过滤。
+        $query = array_filter([
+            'key' => $this->gKey,
+            'address' => $address,
+            'city' => $city,
+            'batch' => $batch,
+        ]);
+        try{
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+            return $data = $output === 'json' ? \json_decode($response, true) : $response;
         }catch (\Exception $e){
             throw new HttpException($e->getMessage(),$e->getCode(),$e);
         }
