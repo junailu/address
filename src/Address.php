@@ -266,38 +266,37 @@ class Address
                 return $data;
             }
         }else{//宽松模式
-            if($this->gaodeSearch($keywords,$city)){
-                $gaodeSearch = $this->gaodeSearch($keywords,$city);
-                if($gaodeSearch['info'] == "OK" && count($gaodeSearch['pois'])>0){
-                    $gaode_loca = $gaodeSearch['pois'][0]['location'];
-                    $location = explode(',',$gaode_loca);
-                    $data['gaode_location'] = [
-                        'lat'=>$location[1],
-                        'lng'=>$location[0],
-                    ];
-                    $data['site']['name'] = $gaodeSearch['pois'][0]['cityname'];
-                    $data['site']['code'] = $gaodeSearch['pois'][0]['citycode'];
-                    return $data;
-                }
-            }else{
-                $gaodeSearch = $this->geoAddress($keywords,$city);
+            return $this->geoLocation($keywords,$city);
+        }
+    }
+    
+     public function geoLocation($keywords,$city){
+
+        $gaode = $this->gaodeSearch($keywords,$city);
+
+        if($gaode && isset($gaode['info'])){
+            if($gaode['info'] == "OK" && count($gaode['pois'])>0){
+                $geo = $gaode['pois'];
+                $data['site']['name'] = $geo[0]['cityname'];
+                $data['site']['code'] = $geo[0]['citycode'];
+            }
+        }else{
+            $gaodeSearch = $this->geoAddress($keywords,$city);
+            if($gaodeSearch && isset($gaodeSearch['info'])){
                 if($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0){
-
-                    $gaode_loca = $gaodeSearch['geocodes'][0]['location'];
-                    
-                    $location = explode(',',$gaode_loca);
-
-                    $data['gaode_location'] = [
-                        'lat'=>$location[1],
-                        'lng'=>$location[0],
-                    ];
-                    $data['site']['name'] = $gaodeSearch['geocodes'][0]['city'];
-                    $data['site']['code'] = $gaodeSearch['geocodes'][0]['adcode'];
-                    return $data;
+                    $geo = $gaodeSearch['geocodes'];
+                    $data['site']['name'] = $geo[0]['city'];
+                    $data['site']['code'] = $geo[0]['citycode'];
                 }
             }
-
         }
+        $gaode_loca = $geo[0]['location'];
+        $location = explode(',',$gaode_loca);
+        $data['gaode_location'] = [
+            'lat'=>$location[1],
+            'lng'=>$location[0],
+        ];
+        return $data;
     }
     /**
      * @param $from
