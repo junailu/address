@@ -259,8 +259,8 @@ class Address
                     'lng'=>$gaode_loca[0],
                 ];
                 $data['baidu_location'] = [
-                    'lat'=>number_format($baiduSearch['lat'],6),
-                    'lng'=>number_format($baiduSearch['lng'],6),
+                    'lat'=>number_format($bai_loca['lat'],6),
+                    'lng'=>number_format($bai_loca['lng'],6),
                 ];
                 $data['distance'] = $distances;
                 return $data;
