@@ -220,7 +220,10 @@ class Address
             $baiduSearch = $this->baiduSearch($keywords,$city);
 
             if(count($gaodeSearch)<1){
+                 if(!$baiduSearch){
 
+                    return false;
+                }
                 $baiduSearch = $baiduSearch['results'][0]['location'];
 
                 $data['gaode_location'] = [
@@ -234,6 +237,9 @@ class Address
                 return $data;//高德地图经纬度;
             }
             if(count($baiduSearch)<1){
+                if(!$gaodeSearch){
+                    return false;
+                }
                 $location = $gaodeSearch['pois'][0]['location'];
                 $location = explode(',',$location);
                 $data['gaode_location'] = [
@@ -250,6 +256,9 @@ class Address
                 $gaode_loca = $gaodeSearch['pois'][0]['location'];
                 $gaode_loca = explode(',',$gaode_loca);//高德地图经纬度
                 $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
+                $bai_location = [$bai_loca['lng'],$bai_loca['lat']];
+                $new_bai_location = $this->locationChange($bai_location);
+                $bai_loca = $new_bai_location;
                 $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
                 if($distances>$distance){//如果距离超出规定的距离就抛出异常
                     throw new DistanceException('address resolution exception:'.$distances);
@@ -497,6 +506,44 @@ class Address
             ])->getBody()->getContents();
             return $data = $output === 'json' ? \json_decode($response, true) : $response;
         }catch (\Exception $e){
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+    }
+     /**
+     *把非高德的坐标转换为高德坐标
+     */
+    public function locationChange($location,$output='json'){
+
+        $locations = $location[0].','.$location[1];
+        $key = config('services.map.key');
+
+        $url = 'https://restapi.amap.com/v3/assistant/coordinate/convert';
+
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+        try {
+            $query = array_filter([
+                'key' => $key,
+                'locations'=>$locations,
+                'coordsys'=>'baidu',
+                'output'=>$output,
+            ]);
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+
+            $data = $output === 'json' ? \json_decode($response, true) : $response;
+            if($data['locations']){
+                $location = explode(',',$data['locations']);
+
+                $location = ['lng'=>$location[0],'lat'=>$location[1]];
+                return $location;
+            }else{
+                return $location;
+            }
+        }catch(\Exception $e){
+
             throw new HttpException($e->getMessage(),$e->getCode(),$e);
         }
     }
