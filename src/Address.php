@@ -15,6 +15,36 @@ class Address
     protected $bKey;//百度API密匙
 
     protected $guzzleOptions = [];
+    
+    protected $geoKey = [
+        '10001'=>'key不正确或过期',
+        '10002'=>'没有权限使用相应的服务或者请求接口的路径拼写错误',
+        '10003'=>'访问已超出日访问量',
+        '10004'=>'单位时间内访问过于频繁',
+        '10005'=>'IP白名单出错，发送请求的服务器IP不在IP白名单内',
+        '10006'=>'绑定域名无效',
+        '10007'=>'数字签名未通过验证',
+        '10008'=>'MD5安全码未通过验证',
+        '10009'=>'请求key与绑定平台不符',
+        '10010'=>'IP访问超限',
+        '10011'=>'服务不支持https请求',
+        '10012'=>'权限不足，服务请求被拒绝',
+        '10013'=>'Key被删除',
+        '10014'=>'云图服务QPS超限',
+        '10015'=>'受单机QPS限流限制',
+        '10016'=>'服务器负载过高',
+        '10017'=>'所请求的资源不可用',
+        '10019'=>'使用的某个服务总QPS超限',
+        '10020'=>'某个Key使用某个服务接口QPS超出限制',
+        '10021'=>'来自于同一IP的访问，使用某个服务QPS超出限制',
+        '10022'=>'某个Key，来自于同一IP的访问，使用某个服务QPS超出限制',
+        '10023'=>'某个KeyQPS超出限制',
+        '20000'=>'请求参数非法',
+        '20001'=>'缺少必填参数',
+        '20002'=>'请求协议非法',
+        '20003'=>'其他未知错误',
+        '20011'=>'查询坐标或规划点（包括起点、终点、途经点）在海外，但没有海外地图权限',
+    ];
 
     public function __construct($gKey='',$bKey='')
     {
@@ -95,7 +125,7 @@ class Address
             // 当 $output 为 json 时，返回数组格式，否则为 xml。
             $data = $output === 'json' ? \json_decode($response, true) : $response;
             if($data['info'] != "OK"){
-                throw new KeyException('gaode Key exception');
+                throw new KeyException($this->geoKey[$data['infocode']]);
             }
             if(count($data['pois'])<1){
                 return [];
@@ -146,7 +176,7 @@ class Address
 
             $data = $output === 'json' ? \json_decode($response, true) : $response;
             if($data['message'] != "ok"){
-                throw new KeyException('baidu Key exception');
+                throw new KeyException($data['message']);
             }
 
             if(count($data['results'])<1) {
@@ -260,9 +290,6 @@ class Address
                 $new_bai_location = $this->locationChange($bai_location);
                 $bai_loca = $new_bai_location;
                 $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
-                if($distances>$distance){//如果距离超出规定的距离就抛出异常
-                    throw new DistanceException('address resolution exception:'.$distances);
-                }
                 $data['gaode_location'] = [
                     'lat'=>$gaode_loca[1],
                     'lng'=>$gaode_loca[0],
