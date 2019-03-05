@@ -245,12 +245,12 @@ class Address
         $data = [];
         if($mode == 1){//严格模式
 
-            $gaodeSearch = $this->gaodeSearch($keywords,$city);
+            $gaodeSearch = $this->geoLocation($keywords,$city);
 
             $baiduSearch = $this->baiduSearch($keywords,$city);
 
-            if(count($gaodeSearch)<1){
-                 if(!$baiduSearch){
+            if(count($gaodeSearch['gaode_location'])<1){
+                if(!$baiduSearch){
 
                     return false;
                 }
@@ -266,34 +266,26 @@ class Address
                 ];
                 return $data;//高德地图经纬度;
             }
+
             if(count($baiduSearch)<1){
                 if(!$gaodeSearch){
                     return false;
                 }
-                $location = $gaodeSearch['pois'][0]['location'];
-                $location = explode(',',$location);
-                $data['gaode_location'] = [
-                    'lat'=>$location[1],
-                    'lng'=>$location[0],
-                ];
+                $data['gaode_location'] = $gaodeSearch['gaode_location'];
                 $data['baidu_location'] = [
                     'lat'=>false,
                     'lng'=>false,
                 ];
                 return $data;//高德地图经纬度;
             }
-            if($gaodeSearch['info'] == "OK" && $baiduSearch['message'] == 'ok' && count($gaodeSearch['pois'])>0 && count($baiduSearch['results'])){
-                $gaode_loca = $gaodeSearch['pois'][0]['location'];
-                $gaode_loca = explode(',',$gaode_loca);//高德地图经纬度
+            if(count($gaodeSearch['gaode_location'])>0 && $baiduSearch['message'] == 'ok' && count($baiduSearch['results'])){
+                $gaode_loca = [$gaodeSearch['gaode_location']['lng'],$gaodeSearch['gaode_location']['lat']];//高德地图坐标
                 $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
                 $bai_location = [$bai_loca['lng'],$bai_loca['lat']];
                 $new_bai_location = $this->locationChange($bai_location);
                 $bai_loca = $new_bai_location;
                 $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
-                $data['gaode_location'] = [
-                    'lat'=>$gaode_loca[1],
-                    'lng'=>$gaode_loca[0],
-                ];
+                $data['gaode_location'] = $gaodeSearch['gaode_location'];
                 $data['baidu_location'] = [
                     'lat'=>number_format($bai_loca['lat'],6),
                     'lng'=>number_format($bai_loca['lng'],6),
@@ -305,25 +297,22 @@ class Address
             return $this->geoLocation($keywords,$city);
         }
     }
-    
-     public function geoLocation($keywords,$city){
 
-        $gaode = $this->gaodeSearch($keywords,$city);
+    public function geoLocation($keywords,$city){
 
-        if($gaode && isset($gaode['info'])){
+        $gaodeSearch = $this->geoAddress($keywords,$city);
+        if($gaodeSearch && isset($gaodeSearch['info'])){
+            if($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0){
+                $geo = $gaodeSearch['geocodes'];
+                $data['site']['name'] = $geo[0]['city'];
+                $data['site']['code'] = $geo[0]['citycode'];
+            }
+        }else{
+            $gaode = $this->gaodeSearch($keywords,$city);
             if($gaode['info'] == "OK" && count($gaode['pois'])>0){
                 $geo = $gaode['pois'];
                 $data['site']['name'] = $geo[0]['cityname'];
                 $data['site']['code'] = $geo[0]['citycode'];
-            }
-        }else{
-            $gaodeSearch = $this->geoAddress($keywords,$city);
-            if($gaodeSearch && isset($gaodeSearch['info'])){
-                if($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0){
-                    $geo = $gaodeSearch['geocodes'];
-                    $data['site']['name'] = $geo[0]['city'];
-                    $data['site']['code'] = $geo[0]['citycode'];
-                }
             }
         }
         $gaode_loca = $geo[0]['location'];
