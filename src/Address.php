@@ -306,6 +306,13 @@ class Address
                 $geo = $gaodeSearch['geocodes'];
                 $data['site']['name'] = $geo[0]['city'];
                 $data['site']['code'] = $geo[0]['citycode'];
+            }else{
+                $gaode = $this->gaodeSearch($keywords,$city);
+                if($gaode['info'] == "OK" && count($gaode['pois'])>0){
+                    $geo = $gaode['pois'];
+                    $data['site']['name'] = $geo[0]['cityname'];
+                    $data['site']['code'] = $geo[0]['citycode'];
+                }
             }
         }else{
             $gaode = $this->gaodeSearch($keywords,$city);
