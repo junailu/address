@@ -570,4 +570,46 @@ class Address
             throw new HttpException($e->getMessage(),$e->getCode(),$e);
         }
     }
+    /**
+     * @param $location
+     * @param int $from
+     * @param int $to
+     * @param string $output
+     * @return array
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 高德坐标转百度
+     */
+    public function geoChangeBai($location,$from=3,$to=5,$output='json'){
+        $url = 'http://api.map.baidu.com/geoconv/v1/';
+
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+        try {
+            $query = array_filter([
+                'ak' => $this->bKey,
+                'coords'=>$location,
+                'from'=>$from,
+                'to'=>$to,
+                'output'=>$output
+            ]);
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+
+            $data = $output === 'json' ? \json_decode($response, true) : $response;
+
+            if($data['result'] && $data['status'] ==0 ){
+
+                $location = ['lng'=>$data['result'][0]['x'],'lat'=>$data['result'][0]['y']];
+                return $location;
+            }else{
+                return $location;
+            }
+        }catch(\Exception $e){
+
+            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        }
+    }
 }
