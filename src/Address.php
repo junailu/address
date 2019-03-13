@@ -681,17 +681,27 @@ class Address
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
 
-        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 5000) {
+        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 1000) {
             return [];
         }
 
         $format = new \Location\Formatter\Coordinate\DecimalDegrees();
 
-        if ($coordinate_qmap->getDistance($coordinate_amap, $vincenty)
-            < $coordinate_qmap->getDistance($coordinate_baidu, $vincenty)
-        ) {
+        $aDistance = $coordinate_qmap->getDistance($coordinate_amap, $vincenty);
+
+        $bDistance = $coordinate_qmap->getDistance($coordinate_baidu, $vincenty);
+
+        if ($aDistance < $bDistance) {
+
+            if($aDistance>1000){
+                return [];
+            }
             $location = $coordinate_amap->format($format);
         } else {
+
+            if($bDistance>1000){
+                return [];
+            }
             $location = $coordinate_baidu->format($format);
         }
         if($location){
