@@ -14,6 +14,8 @@ class Address
 
     protected $bKey;//百度API密匙
 
+    protected $qKey;//百度API密匙
+
     protected $guzzleOptions = [];
     
     protected $geoKey = [
@@ -46,7 +48,7 @@ class Address
         '20011'=>'查询坐标或规划点（包括起点、终点、途经点）在海外，但没有海外地图权限',
     ];
 
-    public function __construct($gKey='',$bKey='')
+    public function __construct($gKey='',$bKey='',$qKey='')
     {
         if(!$gKey){//如果$gKey不存在就读取配置中的$gKey
             if(!function_exists('config')){
@@ -72,6 +74,19 @@ class Address
             $key2 = $bKey;
         }
         $this->bKey = $this->rand($key2);
+
+
+        if(!$qKey){//如果qKey不存在就读取配置中的qKey
+            if(!function_exists('config')){
+                function config(){
+                    return dirname(__FILE__).'/Copy/config';
+                }
+            }
+            $key3 = config('services.map.qKey');
+        }else{
+            $key3 = $qKey;
+        }
+        $this->qKey = $this->rand($key3);
 
     }
     public function config(){
@@ -612,4 +627,80 @@ class Address
             throw new HttpException($e->getMessage(),$e->getCode(),$e);
         }
     }
+
+    /**
+     * @param $address
+     * @return array
+     * @throws \Throwable
+     * 新的地址解析
+     */
+    public function getLocations($address){
+        $client = new \GuzzleHttp\Client();
+
+        $api    = [
+            'amap'  => $client->getAsync("https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address),
+            'baidu' => $client->getAsync("http://api.map.baidu.com/geocoder/v2/?output=json&ak=".$this->bKey."&ret_coordtype=gcj02ll&address=" . $address),
+            'qmap'  => $client->getAsync("https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address),
+        ];
+        $result = \GuzzleHttp\Promise\unwrap($api);
+
+        $coords = [];
+        foreach ($result as $k => $value) {
+            $data   = json_decode($value->getBody(), true);
+            switch ($k) {
+                case 'amap':
+                    $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
+                    list($lng, $lat)    = explode(',', $coord);
+                    $coords[$k] = [
+                        'lng'   => $lng,
+                        'lat'   => $lat,
+                    ];
+                    break;
+
+                case 'baidu':
+                    $coords[$k] = array_get($data, 'result.location');
+                    break;
+                case 'qmap':
+                    $coords[$k] = array_get($data, 'result.location');
+                    break;
+            }
+        }
+        return $this->getShort($coords);
+    }
+
+    /**
+     * 测算最近的距离
+     * Author: CtrL
+     */
+    public function getShort($data = [])
+    {
+        $vincenty           = new \Location\Distance\Vincenty();
+
+        // 计算腾讯和高德距离.
+        $coordinate_qmap    = new \Location\Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
+        $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
+        $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
+
+        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 5000) {
+            return [];
+        }
+
+        $format = new \Location\Formatter\Coordinate\DecimalDegrees();
+
+        if ($coordinate_qmap->getDistance($coordinate_amap, $vincenty)
+            < $coordinate_qmap->getDistance($coordinate_baidu, $vincenty)
+        ) {
+            $location = $coordinate_amap->format($format);
+        } else {
+            $location = $coordinate_baidu->format($format);
+        }
+        if($location){
+            $location = explode(' ',$location);
+            return ['lng'=>$location[1],'lat'=>$location[0]];
+        }else{
+            return [];
+        }
+
+    }
+
 }
