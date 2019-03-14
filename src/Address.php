@@ -675,7 +675,14 @@ class Address
     public function getShort($data = [])
     {
         $vincenty           = new \Location\Distance\Vincenty();
+        if(!$data['qmap'] || !$data['baidu']){
 
+            return $data['amap'];
+
+        }else if(!$data['amap']){
+
+            return $data['baidu'];
+        }
         // 计算腾讯和高德距离.
         $coordinate_qmap    = new \Location\Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
