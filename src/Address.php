@@ -688,7 +688,7 @@ class Address
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
 
-        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 1000) {
+        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 3000) {
             return [];
         }
 
@@ -700,13 +700,13 @@ class Address
 
         if ($aDistance < $bDistance) {
 
-            if($aDistance>1000){
+            if($aDistance>3000){
                 return [];
             }
             $location = $coordinate_amap->format($format);
         } else {
 
-            if($bDistance>1000){
+            if($bDistance>3000){
                 return [];
             }
             $location = $coordinate_baidu->format($format);
