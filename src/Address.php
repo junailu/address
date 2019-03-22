@@ -1,6 +1,7 @@
 <?php
 
 namespace Zhjun\Address;
+
 use GuzzleHttp\Client;
 use Zhjun\Address\Exceptions\AddressException;
 use Zhjun\Address\Exceptions\DistanceException;
@@ -48,54 +49,57 @@ class Address
         '20011'=>'查询坐标或规划点（包括起点、终点、途经点）在海外，但没有海外地图权限',
     ];
 
-    public function __construct($gKey='',$bKey='',$qKey='')
+    public function __construct($gKey='', $bKey='', $qKey='')
     {
-        if(!$gKey){//如果$gKey不存在就读取配置中的$gKey
-            if(!function_exists('config')){
-                function config(){
+        if (!$gKey) {//如果$gKey不存在就读取配置中的$gKey
+            if (!function_exists('config')) {
+                function config()
+                {
                     return dirname(__FILE__).'/Copy/config';
                 }
             }
             $key1 = config('services.map.GaoKey');
-        }else{
+        } else {
             $key1 = $gKey;
         }
 
         $this->gKey = $this->rand($key1);
 
-        if(!$bKey){//如果bKey不存在就读取配置中的bKey
-            if(!function_exists('config')){
-                function config(){
+        if (!$bKey) {//如果bKey不存在就读取配置中的bKey
+            if (!function_exists('config')) {
+                function config()
+                {
                     return dirname(__FILE__).'/Copy/config';
                 }
             }
             $key2 = config('services.map.BaiKey');
-        }else{
+        } else {
             $key2 = $bKey;
         }
         $this->bKey = $this->rand($key2);
 
 
-        if(!$qKey){//如果qKey不存在就读取配置中的qKey
-            if(!function_exists('config')){
-                function config(){
+        if (!$qKey) {//如果qKey不存在就读取配置中的qKey
+            if (!function_exists('config')) {
+                function config()
+                {
                     return dirname(__FILE__).'/Copy/config';
                 }
             }
             $key3 = config('services.map.qKey');
-        }else{
+        } else {
             $key3 = $qKey;
         }
         $this->qKey = $this->rand($key3);
-
     }
-    public function config(){
-
+    public function config()
+    {
     }
     //对多个key值进行处理
-    public function rand($key){
-        $key = explode(',',$key);
-        $rand= array_rand($key,1);
+    public function rand($key)
+    {
+        $key = explode(',', $key);
+        $rand= array_rand($key, 1);
         return $key[$rand];
     }
 
@@ -104,15 +108,15 @@ class Address
         return new Client($this->guzzleOptions);
     }
 
-    public function setGuzzleOptions(array $options){
-
+    public function setGuzzleOptions(array $options)
+    {
         $this->guzzleOptions = $options;
     }
     /**
      * 根据搜索地址获取（高德地图）
      */
-    public function gaodeSearch($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
-
+    public function gaodeSearch($keywords, $city, $types='', $children=1, $offset=20, $page=1, $output='json', $extensions='all')
+    {
         $url = 'https://restapi.amap.com/v3/place/text';//高德API服务地址搜索
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -121,7 +125,7 @@ class Address
         if (!\in_array(\strtolower($extensions), ['base', 'all'])) {
             throw new InvalidArgumentException('Invalid type value(base/all): '.$extensions);
         }
-        try{
+        try {
             $query = array_filter([ //高德地图参数
                 'key' => $this->gKey,
                 'keywords'=>$keywords,//地址
@@ -139,20 +143,16 @@ class Address
             // 4. 返回值根据 $output 返回不同的格式，
             // 当 $output 为 json 时，返回数组格式，否则为 xml。
             $data = $output === 'json' ? \json_decode($response, true) : $response;
-            if($data['info'] != "OK"){
+            if ($data['info'] != "OK") {
                 throw new KeyException($this->geoKey[$data['infocode']]);
             }
-            if(count($data['pois'])<1){
+            if (count($data['pois'])<1) {
                 return [];
             }
             return $data;
-        }catch(\Exception $e){
-
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
-
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
-
-
     }
 
     /**
@@ -167,8 +167,8 @@ class Address
      * @throws InvalidArgumentException
      * 根据地址搜索(百度地图)
      */
-    public function baiduSearch($keywords,$city,$types='',$children=1,$offset=20,$page=1,$output='json',$extensions='all'){
-
+    public function baiduSearch($keywords, $city, $types='', $children=1, $offset=20, $page=1, $output='json', $extensions='all')
+    {
         $url = 'http://api.map.baidu.com/place/v2/search';//百度API服务地址
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
             throw new InvalidArgumentException('Invalid response format: '.$output);
@@ -190,20 +190,17 @@ class Address
             ])->getBody()->getContents();
 
             $data = $output === 'json' ? \json_decode($response, true) : $response;
-            if($data['message'] != "ok"){
+            if ($data['message'] != "ok") {
                 throw new KeyException($data['message']);
             }
 
-            if(count($data['results'])<1) {
+            if (count($data['results'])<1) {
                 return [];
             }
             return $data;
-        }catch(\Exception $e){
-
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
-
-
     }
 
     /**
@@ -217,8 +214,8 @@ class Address
      * @throws InvalidArgumentException
      * 根据坐标搜索地址
      */
-    public function getLocation($location,$radius=1000,$extensions='all',$output='json',$batch="false"){
-
+    public function getLocation($location, $radius=1000, $extensions='all', $output='json', $batch="false")
+    {
         $url = 'https://restapi.amap.com/v3/geocode/regeo';//API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -248,25 +245,24 @@ class Address
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
      * 计算百度地图和高德地图同一地址的经纬距离
      */
-    public function getAddress($keywords,$city,$mode=2,$distance=500,$types=''){
-
+    public function getAddress($keywords, $city, $mode=2, $distance=500, $types='')
+    {
         $data = [];
-        if($mode == 1){//严格模式
+        if ($mode == 1) {//严格模式
 
-            $gaodeSearch = $this->geoLocation($keywords,$city);
+            $gaodeSearch = $this->geoLocation($keywords, $city);
 
-            $baiduSearch = $this->baiduSearch($keywords,$city);
+            $baiduSearch = $this->baiduSearch($keywords, $city);
 
-            if(count($gaodeSearch['gaode_location'])<1){
-                if(!$baiduSearch){
-
+            if (count($gaodeSearch['gaode_location'])<1) {
+                if (!$baiduSearch) {
                     return false;
                 }
                 $baiduSearch = $baiduSearch['results'][0]['location'];
@@ -276,14 +272,14 @@ class Address
                     'lng'=>false,
                 ];
                 $data['baidu_location'] = [
-                    'lat'=>number_format($baiduSearch['lat'],6),
-                    'lng'=>number_format($baiduSearch['lng'],6),
+                    'lat'=>number_format($baiduSearch['lat'], 6),
+                    'lng'=>number_format($baiduSearch['lng'], 6),
                 ];
                 return $data;//高德地图经纬度;
             }
 
-            if(count($baiduSearch)<1){
-                if(!$gaodeSearch){
+            if (count($baiduSearch)<1) {
+                if (!$gaodeSearch) {
                     return false;
                 }
                 $data['gaode_location'] = $gaodeSearch['gaode_location'];
@@ -293,52 +289,52 @@ class Address
                 ];
                 return $data;//高德地图经纬度;
             }
-            if(count($gaodeSearch['gaode_location'])>0 && $baiduSearch['message'] == 'ok' && count($baiduSearch['results'])){
+            if (count($gaodeSearch['gaode_location'])>0 && $baiduSearch['message'] == 'ok' && count($baiduSearch['results'])) {
                 $gaode_loca = [$gaodeSearch['gaode_location']['lng'],$gaodeSearch['gaode_location']['lat']];//高德地图坐标
                 $bai_loca = $baiduSearch['results'][0]['location'];//百度地图经纬度
                 $bai_location = [$bai_loca['lng'],$bai_loca['lat']];
                 $new_bai_location = $this->locationChange($bai_location);
                 $bai_loca = $new_bai_location;
-                $distances = $this->get_distance($gaode_loca,$bai_loca);//计算经纬度之间的距离
+                $distances = $this->get_distance($gaode_loca, $bai_loca);//计算经纬度之间的距离
                 $data['gaode_location'] = $gaodeSearch['gaode_location'];
                 $data['baidu_location'] = [
-                    'lat'=>number_format($bai_loca['lat'],6),
-                    'lng'=>number_format($bai_loca['lng'],6),
+                    'lat'=>number_format($bai_loca['lat'], 6),
+                    'lng'=>number_format($bai_loca['lng'], 6),
                 ];
                 $data['distance'] = $distances;
                 return $data;
             }
-        }else{//宽松模式
-            return $this->geoLocation($keywords,$city);
+        } else {//宽松模式
+            return $this->geoLocation($keywords, $city);
         }
     }
 
-    public function geoLocation($keywords,$city){
-
-        $gaodeSearch = $this->geoAddress($keywords,$city);
-        if($gaodeSearch && isset($gaodeSearch['info'])){
-            if($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0){
+    public function geoLocation($keywords, $city)
+    {
+        $gaodeSearch = $this->geoAddress($keywords, $city);
+        if ($gaodeSearch && isset($gaodeSearch['info'])) {
+            if ($gaodeSearch['info'] == 'OK' && $gaodeSearch['count']>0) {
                 $geo = $gaodeSearch['geocodes'];
                 $data['site']['name'] = $geo[0]['city'];
                 $data['site']['code'] = $geo[0]['citycode'];
-            }else{
-                $gaode = $this->gaodeSearch($keywords,$city);
-                if($gaode['info'] == "OK" && count($gaode['pois'])>0){
+            } else {
+                $gaode = $this->gaodeSearch($keywords, $city);
+                if ($gaode['info'] == "OK" && count($gaode['pois'])>0) {
                     $geo = $gaode['pois'];
                     $data['site']['name'] = $geo[0]['cityname'];
                     $data['site']['code'] = $geo[0]['citycode'];
                 }
             }
-        }else{
-            $gaode = $this->gaodeSearch($keywords,$city);
-            if($gaode['info'] == "OK" && count($gaode['pois'])>0){
+        } else {
+            $gaode = $this->gaodeSearch($keywords, $city);
+            if ($gaode['info'] == "OK" && count($gaode['pois'])>0) {
                 $geo = $gaode['pois'];
                 $data['site']['name'] = $geo[0]['cityname'];
                 $data['site']['code'] = $geo[0]['citycode'];
             }
         }
         $gaode_loca = $geo[0]['location'];
-        $location = explode(',',$gaode_loca);
+        $location = explode(',', $gaode_loca);
         $data['gaode_location'] = [
             'lat'=>$location[1],
             'lng'=>$location[0],
@@ -353,7 +349,8 @@ class Address
      * @return float
      * 计算经纬度距离
      */
-    public function get_distance($from, $to, $km = true, $decimal = 2) {
+    public function get_distance($from, $to, $km = true, $decimal = 2)
+    {
         $from = array_values($from);
         $to = array_values($to);
 
@@ -368,17 +365,18 @@ class Address
         return round($distance, $decimal);
     }
     //根据地址模糊搜索
-    public function search($keywords,$city,$type=1){
+    public function search($keywords, $city, $type=1)
+    {
         $data = [];
-        if($type == 1){
-            $gaodeSearch = $this->gaodeSearch($keywords,$city);
+        if ($type == 1) {
+            $gaodeSearch = $this->gaodeSearch($keywords, $city);
             $data['status'] = $gaodeSearch['status'];
             //$data['count'] = $gaodeSearch['count'];
             $data['message'] = $gaodeSearch['info'];
             //$data['infocode'] = $gaodeSearch['infocode'];
             //$data['results'] = $gaodeSearch['infocode'];
             $tmp = [];
-            foreach($gaodeSearch['pois'] as $key=>$value){
+            foreach ($gaodeSearch['pois'] as $key=>$value) {
                 $tmp[$key]['id'] = $value['id'];
                 $tmp[$key]['name'] = $value['name'];
                 $tmp[$key]['type'] = $value['type'];
@@ -393,13 +391,12 @@ class Address
                 $tmp[$key]['area'] = $value['adname'];
             }
             $data['results'] = $tmp;
-
-        }else{
-            $baiduSearch = $this->baiduSearch($keywords,$city);
+        } else {
+            $baiduSearch = $this->baiduSearch($keywords, $city);
             $data['status'] = $baiduSearch['status'];
             $data['message'] = $baiduSearch['message'];
             $tmp = [];
-            foreach($baiduSearch['results'] as $key=>$value){
+            foreach ($baiduSearch['results'] as $key=>$value) {
                 $tmp[$key]['name'] = $value['name'];
                 $tmp[$key]['location'] = $value['location']['lat'].','.$value['location']['lng'];
                 $tmp[$key]['address'] = $value['address'];
@@ -424,7 +421,8 @@ class Address
      * @throws HttpException
      * @throws InvalidArgumentException
      */
-    public function addreeSearch($keywords,$city,$type='',$citylimit='all',$datatype='all',$output="json"){
+    public function addreeSearch($keywords, $city, $type='', $citylimit='all', $datatype='all', $output="json")
+    {
         $url = 'https://restapi.amap.com/v3/assistant/inputtips';//API服务地址
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -454,20 +452,20 @@ class Address
         } catch (\Exception $e) {
             // 5. 当调用出现异常时捕获并抛出，消息为捕获到的异常消息，
             // 并将调用异常作为 $previousException 传入。
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
     
-     /**
-     * @param $ip
-     * @param string $output
-     * @return mixed
-     * @throws HttpException
-     * @throws InvalidArgumentException
-     * 高德根据ip获取城市
-     */
-    public function getGeoIpCity($ip,$output='json'){
-
+    /**
+    * @param $ip
+    * @param string $output
+    * @return mixed
+    * @throws HttpException
+    * @throws InvalidArgumentException
+    * 高德根据ip获取城市
+    */
+    public function getGeoIpCity($ip, $output='json')
+    {
         $url = 'https://restapi.amap.com/v3/ip';
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -479,15 +477,14 @@ class Address
             'ip'=>$ip,
         ]);
 
-        try{
+        try {
             $response = $this->getHttpClient()->get($url, [
                 'query' => $query,
             ])->getBody()->getContents();
             return $data = $output === 'json' ? \json_decode($response, true) : $response;
-        }catch (\Exception $e){
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
-
     }
 
     /**
@@ -496,7 +493,8 @@ class Address
      * @throws HttpException
      * 百度根据ip获取城市
      */
-    public function getBaiIpCity($ip){
+    public function getBaiIpCity($ip)
+    {
         $url = 'https://api.map.baidu.com/location/ip';
 
         // 2. 封装 query 参数，并对空值进行过滤。
@@ -505,27 +503,28 @@ class Address
             'ip'=>$ip,
         ]);
 
-        try{
+        try {
             $response = $this->getHttpClient()->get($url, [
                 'query' => $query,
             ])->getBody()->getContents();
-           return json_decode($response,true);
-        }catch (\Exception $e){
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+            return json_decode($response, true);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
     
-     /**
-     * @param $address
-     * @param $city
-     * @param bool $batch
-     * @param string $output
-     * @return mixed|string
-     * @throws HttpException
-     * @throws InvalidArgumentException
-     * 新根据地址获取位置
-     */
-    public function geoAddress($address,$city,$batch=true,$output='json'){
+    /**
+    * @param $address
+    * @param $city
+    * @param bool $batch
+    * @param string $output
+    * @return mixed|string
+    * @throws HttpException
+    * @throws InvalidArgumentException
+    * 新根据地址获取位置
+    */
+    public function geoAddress($address, $city, $batch=true, $output='json')
+    {
         $url = 'https://restapi.amap.com/v3/geocode/geo';
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -538,20 +537,20 @@ class Address
             'city' => $city,
             'batch' => $batch,
         ]);
-        try{
+        try {
             $response = $this->getHttpClient()->get($url, [
                 'query' => $query,
             ])->getBody()->getContents();
             return $data = $output === 'json' ? \json_decode($response, true) : $response;
-        }catch (\Exception $e){
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
-     /**
-     *把非高德的坐标转换为高德坐标
-     */
-    public function locationChange($location,$output='json'){
-
+    /**
+    *把非高德的坐标转换为高德坐标
+    */
+    public function locationChange($location, $output='json')
+    {
         $locations = $location[0].','.$location[1];
         $key = config('services.map.key');
 
@@ -572,17 +571,16 @@ class Address
             ])->getBody()->getContents();
 
             $data = $output === 'json' ? \json_decode($response, true) : $response;
-            if($data['locations']){
-                $location = explode(',',$data['locations']);
+            if ($data['locations']) {
+                $location = explode(',', $data['locations']);
 
                 $location = ['lng'=>$location[0],'lat'=>$location[1]];
                 return $location;
-            }else{
+            } else {
                 return $location;
             }
-        }catch(\Exception $e){
-
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
     /**
@@ -595,7 +593,8 @@ class Address
      * @throws InvalidArgumentException
      * 高德坐标转百度
      */
-    public function geoChangeBai($location,$from=3,$to=5,$output='json'){
+    public function geoChangeBai($location, $from=3, $to=5, $output='json')
+    {
         $url = 'http://api.map.baidu.com/geoconv/v1/';
 
         if (!\in_array(\strtolower($output), ['xml', 'json'])) {
@@ -615,16 +614,14 @@ class Address
 
             $data = $output === 'json' ? \json_decode($response, true) : $response;
 
-            if($data['result'] && $data['status'] ==0 ){
-
+            if ($data['result'] && $data['status'] ==0) {
                 $location = ['lng'=>$data['result'][0]['x'],'lat'=>$data['result'][0]['y']];
                 return $location;
-            }else{
+            } else {
                 return $location;
             }
-        }catch(\Exception $e){
-
-            throw new HttpException($e->getMessage(),$e->getCode(),$e);
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -634,8 +631,20 @@ class Address
      * @throws \Throwable
      * 新的地址解析
      */
-    public function getLocations($address){
-        $client = new \GuzzleHttp\Client();
+    public function getLocations($address)
+    {
+        $client = new Client();
+
+        // 去掉特殊字符.
+        $address    = str_replace(
+            [
+                '(', ')', "（", "）"
+            ],
+            '',
+            $address
+        );
+
+        $address    = urlencode($address);
 
         $api    = [
             'amap'  => $client->getAsync("https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address),
@@ -675,12 +684,9 @@ class Address
     public function getShort($data = [])
     {
         $vincenty           = new \Location\Distance\Vincenty();
-        if(!$data['qmap'] || !$data['baidu']){
-
+        if (!$data['qmap'] || !$data['baidu']) {
             return $data['amap'];
-
-        }else if(!$data['amap']){
-
+        } elseif (!$data['amap']) {
             return $data['baidu'];
         }
         // 计算腾讯和高德距离.
@@ -699,25 +705,22 @@ class Address
         $bDistance = $coordinate_qmap->getDistance($coordinate_baidu, $vincenty);
 
         if ($aDistance < $bDistance) {
-
-            if($aDistance>3000){
+            if ($aDistance>3000) {
                 return [];
             }
             $location = $coordinate_amap->format($format);
         } else {
-
-            if($bDistance>3000){
+            if ($bDistance>3000) {
                 return [];
             }
             $location = $coordinate_baidu->format($format);
         }
-        if($location){
-            $location = explode(' ',$location);
+        $location   = trim($location);
+        if ($location) {
+            $location = explode(' ', $location);
             return ['lng'=>$location[1],'lat'=>$location[0]];
-        }else{
+        } else {
             return [];
         }
-
     }
-
 }
