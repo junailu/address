@@ -18,7 +18,7 @@ class Address
     protected $qKey;//百度API密匙
 
     protected $guzzleOptions = [];
-    
+
     protected $geoKey = [
         '10001'=>'key不正确或过期',
         '10002'=>'没有权限使用相应的服务或者请求接口的路径拼写错误',
@@ -455,15 +455,15 @@ class Address
             throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
-    
+
     /**
-    * @param $ip
-    * @param string $output
-    * @return mixed
-    * @throws HttpException
-    * @throws InvalidArgumentException
-    * 高德根据ip获取城市
-    */
+     * @param $ip
+     * @param string $output
+     * @return mixed
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 高德根据ip获取城市
+     */
     public function getGeoIpCity($ip, $output='json')
     {
         $url = 'https://restapi.amap.com/v3/ip';
@@ -512,17 +512,17 @@ class Address
             throw new HttpException($e->getMessage(), $e->getCode(), $e);
         }
     }
-    
+
     /**
-    * @param $address
-    * @param $city
-    * @param bool $batch
-    * @param string $output
-    * @return mixed|string
-    * @throws HttpException
-    * @throws InvalidArgumentException
-    * 新根据地址获取位置
-    */
+     * @param $address
+     * @param $city
+     * @param bool $batch
+     * @param string $output
+     * @return mixed|string
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     * 新根据地址获取位置
+     */
     public function geoAddress($address, $city, $batch=true, $output='json')
     {
         $url = 'https://restapi.amap.com/v3/geocode/geo';
@@ -547,8 +547,8 @@ class Address
         }
     }
     /**
-    *把非高德的坐标转换为高德坐标
-    */
+     *把非高德的坐标转换为高德坐标
+     */
     public function locationChange($location, $output='json')
     {
         $locations = $location[0].','.$location[1];
@@ -694,11 +694,21 @@ class Address
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
 
+        $format = new \Location\Formatter\Coordinate\DecimalDegrees();
+
+        // 百度高德接近时，定位准确.
+        if ($coordinate_amap->getDistance($coordinate_baidu, $vincenty) < 2000) {
+            $location   =  explode(' ', $coordinate_amap->format($format));
+            return [
+                'lng'   => array_last($location),
+                'lat'   => array_first($location)
+            ];
+        }
+
         if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 3000) {
             return [];
         }
 
-        $format = new \Location\Formatter\Coordinate\DecimalDegrees();
 
         $aDistance = $coordinate_qmap->getDistance($coordinate_amap, $vincenty);
 
