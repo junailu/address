@@ -3,6 +3,7 @@
 namespace Zhjun\Address;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Zhjun\Address\Exceptions\AddressException;
 use Zhjun\Address\Exceptions\DistanceException;
 use Zhjun\Address\Exceptions\HttpException;
@@ -626,24 +627,39 @@ class Address
     }
 
     /**
+     * 通过3个地图商Api解析地址经纬度
+     * Author: CtrL
      * @param $address
-     * @return array
+     * @param bool $debug
+     * @return array|mixed
      * @throws \Throwable
-     * 新的地址解析
      */
-    public function getLocations($address)
+    public function getLocations($address, $debug = false)
     {
         $client = new Client();
 
         // 去掉特殊字符.
         $address    = str_replace(
             [
-                '(', ')', "（", "）"
+                '(', ')', "（", "）", "，"
             ],
             '',
             $address
         );
 
+        // 有商场、大厦，直接定位.
+        preg_match('/^(.*?)商场/i', $address, $res);
+        if ($res) {
+            $address    = array_first($res);
+        }
+        preg_match('/^(.*?)大厦/i', $address, $res);
+        if ($res) {
+            $address    = array_first($res);
+        }
+
+        if (!$address) {
+            return [];
+        }
         $address    = urlencode($address);
 
         $api    = [
@@ -653,9 +669,20 @@ class Address
         ];
         $result = \GuzzleHttp\Promise\unwrap($api);
 
+        if ($debug) {
+            var_dump(
+                "https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address,
+                "http://api.map.baidu.com/geocoder/v2/?output=json&ak=".$this->bKey."&ret_coordtype=gcj02ll&address=" . $address,
+                "https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address
+            );
+        }
+
         $coords = [];
         foreach ($result as $k => $value) {
-            $data   = json_decode($value->getBody(), true);
+            /**
+             * @var Response $value
+             */
+            $data   = json_decode($value->getBody()->getContents(), true);
             switch ($k) {
                 case 'amap':
                     $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
@@ -673,6 +700,9 @@ class Address
                     $coords[$k] = array_get($data, 'result.location');
                     break;
             }
+        }
+        if ($debug) {
+            var_dump($coords);
         }
         return $this->getShort($coords);
     }
