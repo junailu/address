@@ -634,7 +634,7 @@ class Address
      * @return array|mixed
      * @throws \Throwable
      */
-    public function getLocations($address, $debug = false)
+    public function getLocations($address, $city = '', $debug = false)
     {
         $client = new Client();
 
@@ -661,19 +661,32 @@ class Address
         }
         $address    = urlencode($address);
 
+        $city_names = [
+            '010'   => "北京"
+        ];
+        $city_name  = array_get($city_names, $city);
+
+        if (strpos($address, $city_name) === false) {
+            $address    = $city_name . $address;
+        }
+
+        $amapUrl    = "https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address
+            . ($city ? "&city={$city}" : "");
+
+        $baiduUrl   = "http://api.map.baidu.com/geocoder/v2/?output=json&ak="
+            . $this->bKey."&ret_coordtype=gcj02ll&address=" . $address;
+
+        $qmapUrl    = "https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address;
+
         $api    = [
-            'amap'  => $client->getAsync("https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address),
-            'baidu' => $client->getAsync("http://api.map.baidu.com/geocoder/v2/?output=json&ak=".$this->bKey."&ret_coordtype=gcj02ll&address=" . $address),
-            'qmap'  => $client->getAsync("https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address),
+            'amap'  => $client->getAsync($amapUrl),
+            'baidu' => $client->getAsync($baiduUrl),
+            'qmap'  => $client->getAsync($qmapUrl),
         ];
         $result = \GuzzleHttp\Promise\unwrap($api);
 
         if ($debug) {
-            var_dump(
-                "https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address,
-                "http://api.map.baidu.com/geocoder/v2/?output=json&ak=".$this->bKey."&ret_coordtype=gcj02ll&address=" . $address,
-                "https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address
-            );
+            var_dump($amapUrl, $baiduUrl, $qmapUrl);
         }
 
         $coords = [];
