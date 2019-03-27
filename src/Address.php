@@ -648,15 +648,7 @@ class Address
         );
 
         // 有商场、大厦，直接定位.
-        preg_match('/^(.*?)商场/i', $address, $res);
-        if ($res) {
-            $address    = array_first($res);
-        }
-        preg_match('/^(.*?)大厦/i', $address, $res);
-        if ($res) {
-            $address    = array_first($res);
-        }
-        preg_match('/^(.*?)号楼/i', $address, $res);
+        preg_match('/^(.*?)(商场|大厦|号楼)/i', $address, $res);
         if ($res) {
             $address    = array_first($res);
         }
