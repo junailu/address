@@ -684,11 +684,10 @@ class Address
             $data   = json_decode($value->getBody()->getContents(), true);
             switch ($k) {
                 case 'amap':
-                    $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
-                    list($lng, $lat)    = explode(',', $coord);
+                    $coord      = explode(',', array_get(array_first(array_get($data, "geocodes", [])), 'location', ''));
                     $coords[$k] = [
-                        'lng'   => $lng,
-                        'lat'   => $lat,
+                        'lng'   => array_first($coord),
+                        'lat'   => array_last($coord),
                     ];
                     break;
 
