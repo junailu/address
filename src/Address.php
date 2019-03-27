@@ -656,6 +656,10 @@ class Address
         if ($res) {
             $address    = array_first($res);
         }
+        preg_match('/^(.*?)号楼/i', $address, $res);
+        if ($res) {
+            $address    = array_first($res);
+        }
 
         if (!$address) {
             return [];
