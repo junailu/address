@@ -647,6 +647,9 @@ class Address
             $address
         );
 
+        // 歧义地址转换.
+        $address    = str_replace("朝悦百汇", "朝悦百惠", $address);
+
         // 有商场、大厦，直接定位.
         preg_match('/^(.*?)(商场|大厦|号楼)/i', $address, $res);
         if ($res) {
