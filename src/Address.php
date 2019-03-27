@@ -705,6 +705,10 @@ class Address
                     break;
 
                 case 'baidu':
+                    // 百度Api精度
+                    if (array_get($data, 'result.comprehension') >= 80) {
+                        return array_get($data, 'result.location');
+                    }
                     $coords[$k] = array_get($data, 'result.location');
                     break;
                 case 'qmap':
