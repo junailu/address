@@ -662,7 +662,8 @@ class Address
         $address    = urlencode($address);
 
         $city_names = [
-            '010'   => "北京"
+            '010'   => "北京",
+            '0755'  => '深圳'
         ];
         $city_name  = array_get($city_names, $city);
 
