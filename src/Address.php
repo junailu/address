@@ -707,10 +707,6 @@ class Address
                     break;
 
                 case 'baidu':
-                    // 百度Api精度
-                    if (array_get($data, 'result.comprehension') >= 80) {
-                        return array_get($data, 'result.location');
-                    }
                     $coords[$k] = array_get($data, 'result.location');
                     break;
                 case 'qmap':
@@ -720,6 +716,10 @@ class Address
         }
         if ($debug) {
             var_dump($coords);
+        }
+        // 百度Api精度
+        if (array_get($data, 'result.comprehension') >= 100) {
+            return array_get($data, 'result.location');
         }
         return $this->getShort($coords);
     }
@@ -752,7 +752,7 @@ class Address
             ];
         }
 
-        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 3000) {
+        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 2000) {
             return [];
         }
 
@@ -762,12 +762,12 @@ class Address
         $bDistance = $coordinate_qmap->getDistance($coordinate_baidu, $vincenty);
 
         if ($aDistance < $bDistance) {
-            if ($aDistance>3000) {
+            if ($aDistance>2000) {
                 return [];
             }
             $location = $coordinate_amap->format($format);
         } else {
-            if ($bDistance>3000) {
+            if ($bDistance>2000) {
                 return [];
             }
             $location = $coordinate_baidu->format($format);
