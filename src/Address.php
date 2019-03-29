@@ -703,13 +703,13 @@ class Address
                     // 高德地图
                     $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
                     if ($coord && !in_array(
-                        $coord,
-                        [
+                            $coord,
+                            [
                                 '116.601144,39.948574', // 朝阳区坐标，排除.
                                 '116.287149,39.858427', // 丰台区坐标,
                                 '116.329519,39.972134',
                             ]
-                    )) {
+                        )) {
                         $coord      = explode(',', $coord);
                         $coords[$k] = [
                             'lng'   => array_first($coord),
@@ -743,13 +743,10 @@ class Address
     public function getShort($data = [])
     {
         $vincenty           = new \Location\Distance\Vincenty();
-        if (!$data['qmap'] || !$data['baidu']) {
-            return $data['amap'];
-        } elseif (!$data['amap']) {
+        if (!$data['amap']) {
             return $data['baidu'];
         }
-        // 计算腾讯和高德距离.
-        $coordinate_qmap    = new \Location\Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
+
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
 
@@ -764,6 +761,13 @@ class Address
             ];
         }
 
+        // 没有腾讯坐标.
+        if (!array_get($data, "qmap")) {
+            return $data['amap'] ?: $data['baidu'];
+        }
+
+        // 计算腾讯和高德距离.
+        $coordinate_qmap    = new \Location\Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
         if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 2000) {
             return [];
         }
