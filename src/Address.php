@@ -668,7 +668,7 @@ class Address
         ];
         $city_name  = array_get($city_names, $city);
 
-        if (strpos($address, $city_name) === false) {
+        if (strpos($city_name, $address) === false) {
             $address    = $city_name . $address;
         }
 
@@ -699,11 +699,23 @@ class Address
             $data   = json_decode($value->getBody()->getContents(), true);
             switch ($k) {
                 case 'amap':
-                    $coord      = explode(',', array_get(array_first(array_get($data, "geocodes", [])), 'location', ''));
-                    $coords[$k] = [
-                        'lng'   => array_first($coord),
-                        'lat'   => array_last($coord),
-                    ];
+                    $coords[$k] = [];
+                    // 高德地图
+                    $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
+                    if ($coord && !in_array(
+                        $coord,
+                        [
+                                '116.601144,39.948574', // 朝阳区坐标，排除.
+                                '116.287149,39.858427', // 丰台区坐标,
+                                '116.329519,39.972134',
+                            ]
+                    )) {
+                        $coord      = explode(',', $coord);
+                        $coords[$k] = [
+                            'lng'   => array_first($coord),
+                            'lat'   => array_last($coord),
+                        ];
+                    }
                     break;
 
                 case 'baidu':
