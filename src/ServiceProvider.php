@@ -12,10 +12,21 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         });
 
         $this->app->alias(Address::class, 'address_parse');
+
+        $this->mergeConfigFrom(
+            __DIR__.'/config/address_trans.php', 'address_trans'
+        );
     }
 
     public function provides()
     {
         return [Address::class, 'address_parse'];
+    }
+
+    public function boot()
+    {
+        $this->publishes([
+            __DIR__.'/config/address_trans.php' => config_path('address_trans.php'),
+        ]);
     }
 }

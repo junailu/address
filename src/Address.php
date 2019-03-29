@@ -651,6 +651,18 @@ class Address
         // 歧义地址转换.
         $address    = str_replace("朝悦百汇", "朝悦百惠", $address);
 
+        // 地图商都无法准确解析的情况.
+        $mapArr     = config("address_trans", []);
+        foreach ($mapArr as $str => $coord) {
+            if (strpos($address, $str) !== false && $coord) {
+                $res    = explode(',', $coord);
+                return [
+                    'lat'   => array_last($res),
+                    'lng'   => array_first($res)
+                ];
+            }
+        }
+
         // 有商场、大厦，直接定位.
         preg_match('/^(.*?)(商场|大厦|号楼)/i', $address, $res);
         if ($res) {
@@ -660,7 +672,6 @@ class Address
         if (!$address) {
             return [];
         }
-        $address    = urlencode($address);
 
         $city_names = [
             '010'   => "北京",
@@ -668,10 +679,11 @@ class Address
         ];
         $city_name  = array_get($city_names, $city);
 
-        if (strpos($city_name, $address) === false) {
+        if (strpos($address, $city_name) === false) {
             $address    = $city_name . $address;
         }
 
+        $address    = urlencode($address);
         $amapUrl    = "https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address
             . ($city ? "&city={$city}" : "");
 
@@ -703,8 +715,8 @@ class Address
                     // 高德地图
                     $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
                     if ($coord && !in_array(
-                            $coord,
-                            [
+                        $coord,
+                        [
                                 '116.601144,39.948574', // 朝阳区坐标，排除.
                                 '116.287149,39.858427', // 丰台区坐标,
                                 '116.329519,39.972134',
