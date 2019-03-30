@@ -700,7 +700,7 @@ class Address
         $result = \GuzzleHttp\Promise\unwrap($api);
 
         if ($debug) {
-            var_dump($amapUrl, $baiduUrl, $qmapUrl);
+            dump($amapUrl, $baiduUrl, $qmapUrl);
         }
 
         $coords = [];
@@ -715,8 +715,8 @@ class Address
                     // 高德地图
                     $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
                     if ($coord && !in_array(
-                        $coord,
-                        [
+                            $coord,
+                            [
                                 '116.601144,39.948574', // 朝阳区坐标，排除.
                                 '116.287149,39.858427', // 丰台区坐标,
                                 '116.329519,39.972134',
@@ -731,6 +731,11 @@ class Address
                     break;
 
                 case 'baidu':
+                    // 百度Api精度
+                    if (array_get($data, 'result.comprehension') >= 100) {
+                        return array_get($data, 'result.location');
+                    }
+
                     $coords[$k] = array_get($data, 'result.location');
                     break;
                 case 'qmap':
@@ -739,11 +744,7 @@ class Address
             }
         }
         if ($debug) {
-            var_dump($coords);
-        }
-        // 百度Api精度
-        if (array_get($data, 'result.comprehension') >= 100) {
-            return array_get($data, 'result.location');
+            dump($coords);
         }
         return $this->getShort($coords);
     }
@@ -758,10 +759,10 @@ class Address
         if (!$data['amap']) {
             return $data['baidu'];
         }
-         if(!$data['baidu'] || !$data['qmap']){
+        if(!$data['baidu'] && !$data['qmap']){
             return $data['amap'];
         }
-         if(!$data['amap'] && !$data['baidu']){
+        if(!$data['amap'] && !$data['baidu']){
             return [];
         }
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
