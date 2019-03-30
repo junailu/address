@@ -4,8 +4,7 @@ namespace Zhjun\Address;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
-use Zhjun\Address\Exceptions\AddressException;
-use Zhjun\Address\Exceptions\DistanceException;
+use Location\Coordinate;
 use Zhjun\Address\Exceptions\HttpException;
 use Zhjun\Address\Exceptions\InvalidArgumentException;
 use Zhjun\Address\Exceptions\KeyException;
@@ -49,6 +48,9 @@ class Address
         '20003'=>'其他未知错误',
         '20011'=>'查询坐标或规划点（包括起点、终点、途经点）在海外，但没有海外地图权限',
     ];
+
+    protected $isDebug      = false;
+    protected $errorRange   = 2000;
 
     public function __construct($gKey='', $bKey='', $qKey='')
     {
@@ -627,15 +629,96 @@ class Address
     }
 
     /**
+     * 通过高德WEB接口定位
+     * Author: CtrL
+     * @param string $text
+     * @return array
+     */
+    public function getWebAmapCoord($text = '')
+    {
+        $text       = trim($text);
+        $jsonpStr   = 'jsonp_' . rand(100000, 999999) . '_';
+
+        $data       = [
+            's'         => 'rsv3',
+            'children'  => '',
+            'key'       => '8325164e247e15eea68b59e89200988b',
+            'page'      => 1,
+            'offset'    => 10,
+            'language'  => 'zh_cn',
+            'callback'  => $jsonpStr,
+            'platform'  => 'JS',
+            'logversion'=> '2.0',
+            'sdkversion'=> '1.3',
+            'appname'   => 'https://lbs.amap.com/console/show/picker',
+            'csid'      => $this->createUUID(),
+            'keywords'  => $text
+        ];
+
+        $coord  = [];
+        $client = new Client();
+        try {
+            $url    = "https://restapi.amap.com/v3/place/text" . http_build_query($data);
+            if ($this->isDebug) {
+                dump($url);
+            }
+            $response   = $client->get($url, [
+                'headers' => [
+                    'User-Agent'    => 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36',
+                    'Referer'       => 'https://lbs.amap.com/console/show/picker',
+                ]
+            ]);
+            $result     = $response->getBody()->getContents();
+            preg_match("/^{$jsonpStr}\((.*?)\)$/i", trim($result), $m);
+            if ($m) {
+                $location   = array_get(
+                    array_first(
+                        array_get(json_decode($m[1], true), 'pois', [])
+                    ),
+                    'location',
+                    ''
+                );
+                if ($location && strpos($location, ',')) {
+                    list($coord['lng'], $coord['lat'])  = explode(',', $location);
+                }
+            }
+        } catch (\Throwable $throwable) {
+        }
+
+        return $coord;
+    }
+
+    /**
+     * 生成UUID
+     * Author: CtrL
+     * @return string
+     */
+    public function createUUID()
+    {
+        $str = md5(uniqid(mt_rand(), true));
+        $uuid  = substr($str, 0, 8) . '-';
+        $uuid .= substr($str, 8, 4) . '-';
+        $uuid .= substr($str, 12, 4) . '-';
+        $uuid .= substr($str, 16, 4) . '-';
+        $uuid .= substr($str, 20, 12);
+        return strtoupper($uuid);
+    }
+
+    /**
      * 通过3个地图商Api解析地址经纬度
      * Author: CtrL
+     *
      * @param $address
+     * @param string $city
      * @param bool $debug
+     *
      * @return array|mixed
      * @throws \Throwable
      */
     public function getLocations($address, $city = '', $debug = false)
     {
+        $this->isDebug  = $debug;
+
         $client = new Client();
 
         // 去掉特殊字符.
@@ -683,6 +766,10 @@ class Address
             $address    = $city_name . $address;
         }
 
+        $coords     = [];
+        // 取web版的高德解析.
+        // $coords['amap_web'] = $this->getWebAmapCoord($address);
+
         $address    = urlencode($address);
         $amapUrl    = "https://restapi.amap.com/v3/geocode/geo?key=".$this->gKey."&address=" . $address
             . ($city ? "&city={$city}" : "");
@@ -690,20 +777,17 @@ class Address
         $baiduUrl   = "http://api.map.baidu.com/geocoder/v2/?output=json&ak="
             . $this->bKey."&ret_coordtype=gcj02ll&address=" . $address;
 
-        $qmapUrl    = "https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address;
-
         $api    = [
             'amap'  => $client->getAsync($amapUrl),
             'baidu' => $client->getAsync($baiduUrl),
-            'qmap'  => $client->getAsync($qmapUrl),
         ];
         $result = \GuzzleHttp\Promise\unwrap($api);
 
-        if ($debug) {
-            dump($amapUrl, $baiduUrl, $qmapUrl);
+        if ($this->isDebug) {
+            dump($amapUrl, $baiduUrl);
         }
 
-        $coords = [];
+        $baidu_comprehension    = 0;
         foreach ($result as $k => $value) {
             /**
              * @var Response $value
@@ -715,8 +799,8 @@ class Address
                     // 高德地图
                     $coord      = array_get(array_first(array_get($data, "geocodes", [])), 'location', '');
                     if ($coord && !in_array(
-                            $coord,
-                            [
+                        $coord,
+                        [
                                 '116.601144,39.948574', // 朝阳区坐标，排除.
                                 '116.287149,39.858427', // 丰台区坐标,
                                 '116.329519,39.972134',
@@ -732,86 +816,97 @@ class Address
 
                 case 'baidu':
                     // 百度Api精度
-                    if (array_get($data, 'result.comprehension') >= 100) {
-                        return array_get($data, 'result.location');
-                    }
-
-                    $coords[$k] = array_get($data, 'result.location');
-                    break;
-                case 'qmap':
-                    $coords[$k] = array_get($data, 'result.location');
+                    $baidu_comprehension = array_get($data, 'result.comprehension');
+                    $coords[$k] = array_get($data, 'result.location', []);
                     break;
             }
         }
-        if ($debug) {
+        if ($this->isDebug) {
             dump($coords);
         }
-        return $this->getShort($coords);
+
+        // 有结果.
+        $result = $this->getShort($coords, $address);
+        if ($result) {
+            return $result;
+        }
+
+        // 没有结果参考百度的精度.
+        if (!$result && $baidu_comprehension >= 100) {
+            return $coords['baidu'];
+        }
+
+        // 实在没有 返回高德地图坐标
+        return $coords['amap'];
     }
 
     /**
      * 测算最近的距离
      * Author: CtrL
      */
-    public function getShort($data = [])
+    public function getShort($data = [], $address = '')
     {
-        $vincenty           = new \Location\Distance\Vincenty();
+        $vincenty   = new \Location\Distance\Vincenty();
+
+        // 没有高德定位.
         if (!$data['amap']) {
             return $data['baidu'];
+        } else {
+            $coordinate_amap    = new Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         }
-        if(!$data['baidu'] && !$data['qmap']){
+
+        // 没有百度定位.
+        if (!$data['baidu']) {
             return $data['amap'];
-        }
-        if(!$data['amap'] && !$data['baidu']){
-            return [];
-        }
-        $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
-        $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
-
-        $format = new \Location\Formatter\Coordinate\DecimalDegrees();
-
-        // 百度高德接近时，定位准确.
-        if ($coordinate_amap->getDistance($coordinate_baidu, $vincenty) < 2000) {
-            $location   =  explode(' ', $coordinate_amap->format($format));
-            return [
-                'lng'   => array_last($location),
-                'lat'   => array_first($location)
-            ];
+        } else {
+            $coordinate_baidu   = new Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
         }
 
+        // 没有百度坐标或者有离高德2km内的坐标，视为准确定位.
+        if ($coordinate_amap->getDistance($coordinate_baidu, $vincenty) < $this->errorRange) {
+            return $this->formatCoord($coordinate_amap);
+        }
+
+        // 都没有靠近，加入腾讯地图定位来计算
+        $qmapUrl    = "https://apis.map.qq.com/ws/geocoder/v1/?key=".$this->qKey."&address=" . $address;
+        if ($this->isDebug) {
+            dump($qmapUrl);
+        }
+        try {
+            $data['qmap']   = array_get(
+                json_decode((new Client())->get($qmapUrl)->getBody()->getContents(), true),
+                'result.location',
+                []
+            );
+        } catch (\Throwable $throwable) {
+            $data['qmap']   = [];
+        }
         // 没有腾讯坐标.
         if (!array_get($data, "qmap")) {
-            return $data['amap'] ?: $data['baidu'];
+            return [];
         }
+        $coordinate_qmap    = new Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
 
         // 计算腾讯和高德距离.
-        $coordinate_qmap    = new \Location\Coordinate(array_get($data, "qmap.lat"), array_get($data, "qmap.lng"));
-        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) > 2000) {
-            return [];
+        if ($coordinate_qmap->getDistance($coordinate_amap, $vincenty) < $this->errorRange) {
+            return $this->formatCoord($coordinate_amap);
         }
 
-
-        $aDistance = $coordinate_qmap->getDistance($coordinate_amap, $vincenty);
-
-        $bDistance = $coordinate_qmap->getDistance($coordinate_baidu, $vincenty);
-
-        if ($aDistance < $bDistance) {
-            if ($aDistance>2000) {
-                return [];
-            }
-            $location = $coordinate_amap->format($format);
-        } else {
-            if ($bDistance>2000) {
-                return [];
-            }
-            $location = $coordinate_baidu->format($format);
+        if ($coordinate_qmap->getDistance($coordinate_baidu, $vincenty) < $this->errorRange) {
+            return $this->formatCoord($coordinate_baidu);
         }
-        $location   = trim($location);
-        if ($location) {
-            $location = explode(' ', $location);
-            return ['lng'=>$location[1],'lat'=>$location[0]];
-        } else {
-            return [];
-        }
+
+        return [];
+    }
+
+    protected function formatCoord(Coordinate $coordinate)
+    {
+        $format             = new \Location\Formatter\Coordinate\DecimalDegrees();
+
+        $location   =  explode(' ', $coordinate->format($format));
+        return [
+            'lng'   => array_last($location),
+            'lat'   => array_first($location)
+        ];
     }
 }
