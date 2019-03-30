@@ -758,7 +758,9 @@ class Address
         if (!$data['amap']) {
             return $data['baidu'];
         }
-
+         if(!$data['baidu'] || !$data['qmap']){
+            return $data['amap'];
+        }
         $coordinate_amap    = new \Location\Coordinate(array_get($data, "amap.lat"), array_get($data, "amap.lng"));
         $coordinate_baidu   = new \Location\Coordinate(array_get($data, "baidu.lat"), array_get($data, "baidu.lng"));
 
