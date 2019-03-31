@@ -735,14 +735,16 @@ class Address
         $address    = str_replace("朝悦百汇", "朝悦百惠", $address);
 
         // 地图商都无法准确解析的情况.
-        $mapArr     = config("address_trans", []);
-        foreach ($mapArr as $str => $coord) {
-            if (strpos($address, $str) !== false && $coord) {
-                $res    = explode(',', $coord);
-                return [
-                    'lat'   => array_last($res),
-                    'lng'   => array_first($res)
-                ];
+        if ($city) {
+            $mapArr     = config("address_trans.".$city, []);
+            foreach ($mapArr as $str => $coord) {
+                if (strpos($address, $str) !== false && $coord) {
+                    $res    = explode(',', $coord);
+                    return [
+                        'lat'   => array_last($res),
+                        'lng'   => array_first($res)
+                    ];
+                }
             }
         }
 
