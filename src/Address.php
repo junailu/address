@@ -724,12 +724,22 @@ class Address
         // 去掉特殊字符.
         $address    = str_replace(
             [
-                '(', ')', "（", "）", "，", "。", " ",
-                '快递柜'
+                "，", "。", " ", '快递柜'
             ],
             '',
             $address
         );
+
+        // 处理括号
+        $address    = str_replace("（", "(", $address);
+        $address    = str_replace("）", ")", $address);
+
+        // 判断括号里是否有分店类关键词
+        preg_match("/\(.*?[店,区,厂].*?\)?/i", $address, $m);
+        if (empty($m)) {
+            // 视为括号里信息没用.
+            $address    = str_replace(array_first($m), '', $address);
+        }
 
         // 歧义地址转换.
         $address    = str_replace("朝悦百汇", "朝悦百惠", $address);
