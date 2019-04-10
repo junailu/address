@@ -770,6 +770,7 @@ class Address
 
         $city_names = [
             '010'   => "北京",
+            '021'   => '上海',
             '0755'  => '深圳'
         ];
         $city_name  = array_get($city_names, $city);
