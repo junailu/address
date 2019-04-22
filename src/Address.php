@@ -961,6 +961,8 @@ class Address
             
             if($data['info'] == "OK" && $data['status'] == 1){
                 return $data['route']['paths'][0]['duration'];
+            }else{
+                throw new KeyException($this->geoKey[$data['infocode']]);
             }
         } catch (\Exception $e) {
             throw new HttpException($e->getMessage(), $e->getCode(), $e);
