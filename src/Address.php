@@ -922,4 +922,48 @@ class Address
             'lat'   => array_first($location)
         ];
     }
+     /**
+     * @param $origin 起始经纬度
+     * @param $destination 终点经纬度
+     * @param string $extensions 返回参数
+     * @param int $strategy 驾车选择策略
+     * @param null $province  用汉字填入车牌省份缩写，用于判断是否限行
+     * @param null $number 填入除省份及标点之外，车牌的字母和数字（需大写）。用于判断限行相关。
+     * @param int $cartype 车辆类型
+     * @param string $output json返回数据类型
+     * @return array
+     * @throws HttpException
+     * @throws InvalidArgumentException
+     */
+    public function routePlan($origin,$destination,$extensions="base",$strategy=0,$province=null,$number=null,$cartype=0,$output="json"){
+        $url = 'https://restapi.amap.com/v3/direction/driving';
+    
+        if (!\in_array(\strtolower($output), ['xml', 'json'])) {
+            throw new InvalidArgumentException('Invalid response format: '.$output);
+        }
+        try {
+            $query = array_filter([
+                'key' => $this->gKey,
+                'origin' => $origin,
+                'destination' => $destination,
+                'strategy' => $strategy,
+                'extensions' => $extensions,
+                'cartype' => $cartype,
+                'number' => $number,
+                'province' => $province,
+                'output'=>$output
+            ]);
+            $response = $this->getHttpClient()->get($url, [
+                'query' => $query,
+            ])->getBody()->getContents();
+        
+            $data = $output === 'json' ? \json_decode($response, true) : $response;
+            
+            if($data['info'] == "OK" && $data['status'] == 1){
+                return $data['route']['paths'][0]['duration'];
+            }
+        } catch (\Exception $e) {
+            throw new HttpException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
 }
